@@ -39,6 +39,9 @@
     <ClCompile Include="src\analysis\analysis_thread.cpp">
       <Filter>Fuentes\analysis</Filter>
     </ClCompile>
+    <ClCompile Include="src\analysis\band_metrics.cpp">
+      <Filter>Fuentes\analysis</Filter>
+    </ClCompile>
     <ClCompile Include="src\analysis\window_function.cpp">
       <Filter>Fuentes\analysis</Filter>
     </ClCompile>
@@ -56,6 +59,9 @@
     </ClCompile>
     <ClCompile Include="src\audio\sample_format.cpp">
       <Filter>Fuentes\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\band_layout.cpp">
+      <Filter>Fuentes\core</Filter>
     </ClCompile>
     <ClCompile Include="src\core\config.cpp">
       <Filter>Fuentes\core</Filter>
@@ -80,6 +86,9 @@
     </ClCompile>
     <ClCompile Include="src\render\gl_window.cpp">
       <Filter>Fuentes\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\modes\band_meters_mode.cpp">
+      <Filter>Fuentes\render\modes</Filter>
     </ClCompile>
     <ClCompile Include="src\render\modes\bars_mode.cpp">
       <Filter>Fuentes\render\modes</Filter>
@@ -134,6 +143,9 @@
     <ClInclude Include="src\analysis\analysis_thread.h">
       <Filter>Fuentes\analysis</Filter>
     </ClInclude>
+    <ClInclude Include="src\analysis\band_metrics.h">
+      <Filter>Fuentes\analysis</Filter>
+    </ClInclude>
     <ClInclude Include="src\analysis\window_function.h">
       <Filter>Fuentes\analysis</Filter>
     </ClInclude>
@@ -153,6 +165,9 @@
       <Filter>Fuentes\audio</Filter>
     </ClInclude>
     <ClInclude Include="src\core\analysis_frame.h">
+      <Filter>Fuentes\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\band_layout.h">
       <Filter>Fuentes\core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\config.h">
@@ -187,6 +202,9 @@
     </ClInclude>
     <ClInclude Include="src\render\gl_window.h">
       <Filter>Fuentes\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\modes\band_meters_mode.h">
+      <Filter>Fuentes\render\modes</Filter>
     </ClInclude>
     <ClInclude Include="src\render\modes\bars_mode.h">
       <Filter>Fuentes\render\modes</Filter>

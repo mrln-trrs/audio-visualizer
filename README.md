@@ -98,6 +98,7 @@ El repositorio cuenta con una suite documental estructurada en la carpeta [`docs
 | `2` | Activar Modo 2: **Radial / Circular** |
 | `3` | Activar Modo 3: **Osciloscopio / Waveform** |
 | `4` | Activar Modo 4: **Espectrograma Cascada (Waterfall)** |
+| `6` | Activar Modo 5: **Medidores por Banda** (nombre, rango, nivel en dB, pico y color por banda) |
 
 ---
 
@@ -109,6 +110,7 @@ audio-visualizer/
 |-- audio-visualizer.sln            Solución de Visual Studio
 |-- config.json                     Configuración inicial en tiempo de ejecución
 |-- docs/                           Documentación formal (PRD, Tech Spec, UX Flows, Kanban)
+|-- tests/band_metrics_test.cpp     Prueba numerica de bandas y Parseval (objetivo CMake)
 |-- shaders/                        Shaders GLSL (Modern OpenGL 3.3 Core)
 |   |-- bars.vert / bars.frag       Shader para barras y marcadores de pico
 |   |-- quad.vert                   Vertex shader común para modos de pantalla completa
@@ -125,6 +127,7 @@ audio-visualizer/
 |   |   |-- shared_state.h          AudioData, VisualizerData (puntos de intercambio)
 |   |   |-- analysis_frame.h        AnalysisFrame: todo lo que el analisis extrae de una ventana
 |   |   |-- triple_buffer.h         Intercambio productor-consumidor sin bloqueos
+|   |   |-- band_layout.*           BandConfig, validacion y particion del espectro en bandas
 |   |   `-- config.*                VisualizerConfig, LoadConfig, SaveConfig
 |   |-- audio/                      Captura WASAPI
 |   |   |-- sample_format.*         Deteccion de formato y mezcla a mono
@@ -133,6 +136,7 @@ audio-visualizer/
 |   |   `-- capture_thread.*        COM, MMCSS, reintentos y cambio de dispositivo
 |   |-- analysis/                   Procesado de senal
 |   |   |-- window_function.*       Hann periodica y normalizacion
+|   |   |-- band_metrics.*          Energia, RMS y pico por banda
 |   |   `-- analysis_thread.*       Ventana deslizante, FFT, dB, publicacion
 |   |-- render/                     OpenGL 3.3 Core
 |   |   |-- gl_window.*             Ventana GLFW, GLEW, refresco del monitor
@@ -149,7 +153,8 @@ audio-visualizer/
 |   |       |-- bars_mode.*         1. Barras con peak-hold
 |   |       |-- radial_mode.*       2. Radial
 |   |       |-- waveform_mode.*     3. Osciloscopio
-|   |       `-- waterfall_mode.*    4. Cascada
+|   |       |-- waterfall_mode.*    4. Cascada
+|   |       `-- band_meters_mode.*  5. Medidores por banda (tecla 6)
 |   `-- ui/                         Dear ImGui
 |       |-- theme.*                 Estilo y HelpMarker
 |       |-- telemetry.*             Metricas y titulo de la ventana
@@ -232,7 +237,7 @@ La versión 2.0 reduce el análisis a un vector de alturas de barra. La 3.0 prop
 - **Osciloscopio apilado**, medidores por banda, dinámica de ataque y caída por banda, y detección de golpes por flujo espectral.
 - **Diseño Fluent.** Panel con material acrílico propio (desenfoque, tinte, exclusión, ruido), materiales Mica y Acrílico del sistema en Windows 11, transiciones con curvas de aceleración y contraste mínimo 4,5:1. Documento 12.
 
-Estado: la fase A está implementada (trama de análisis `AnalysisFrame` con triple búfer, mapeo a barras en el render). El resto es documentación. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
+Estado: fases A y B implementadas (trama de análisis con triple búfer; bandas configurables con métricas, dinámica por banda y modo de medidores, tecla `6`). Las fases C (ondas por banda y osciloscopio apilado) y D (resolución variable) y el diseño Fluent son documentación. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
 
 ---
 

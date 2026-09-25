@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "core/config.h"
+#include "core/band_layout.h"
 #include "render/data_textures.h"
 #include "render/spectrum_dynamics.h"
 #include "render/fullscreen_quad.h"
@@ -18,8 +19,10 @@ struct RenderContext {
     int num_bars;
     const core::VisualizerConfig& cfg;
     const DataTextures& textures;
-    const SpectrumDynamics& dynamics;
+    const SpectrumDynamics& dynamics;     // alturas y picos por barra (ancho en píxeles)
     const FullscreenQuad& quad;
+    const core::BandLayout& bands;        // partición actual del espectro
+    const SpectrumDynamics& band_dynamics;// niveles y picos por banda, animados
 };
 
 class IVisualMode {
@@ -27,7 +30,11 @@ public:
     virtual ~IVisualMode() = default;
     // Compila shaders y crea recursos GL. Devuelve false si el modo no puede dibujar.
     virtual bool Init() = 0;
+    // Dibujo OpenGL de la escena.
     virtual void Render(const RenderContext& ctx) = 0;
+    // Dibujo opcional de texto y marcas con Dear ImGui. Se llama entre ImGui::NewFrame y
+    // ImGui::Render, después de Render.
+    virtual void DrawOverlay(const RenderContext&) {}
     virtual void Shutdown() = 0;
     virtual const char* Name() const = 0;
 };

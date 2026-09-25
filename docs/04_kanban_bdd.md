@@ -162,7 +162,9 @@ Verificación: MSBuild y CMake sin avisos; los cuatro modos equivalentes por cap
     - **When** se instrumenta el consumidor para verificar el campo `sequence`
     - **Then** cada trama leída tiene `sequence` estrictamente creciente y nunca se observa una trama a medio escribir.
 
-#### Historia 5.2: Definición de bandas y energía
+#### Historia 5.2: Definición de bandas y energía (completada)
+
+Verificación: `tests/band_metrics_test.cpp` (objetivo `band_metrics_test` de CMake, `ctest --test-dir build -C Release`). Resultados en el documento 11, fase B. La tolerancia del pico se corrigió de 0,5 dB a la pérdida de festoneado de Hann (1,42 dB) y la fuga a la banda contigua se acota por el lóbulo principal (-31 dB), ambos derivados del documento 10.
 - **Como**: Usuario.
 - **Quiero**: Dividir el espectro en octavas, en partes iguales o con cortes manuales, con nombre y color por banda.
 - **Para**: Ver la energía de cada rango por separado.
@@ -170,7 +172,7 @@ Verificación: MSBuild y CMake sin avisos; los cuatro modos equivalentes por cap
   - **Scenario**: Energía en la banda correcta
     - **Given** el preset de siete bandas y una senoidal de 100 Hz a -6 dBFS
     - **When** se leen `band_energy` y `band_peak_db`
-    - **Then** solo la banda "Bajo" tiene energía apreciable y su pico está a -6 dB con error inferior a 0,5 dB.
+    - **Then** la banda "Bajo" concentra más del 99 % de la energía, su pico está a -6 dB con error inferior a la pérdida de festoneado de Hann (1,42 dB), la banda contigua queda al menos 25 dB por debajo (lóbulo principal) y las demás al menos 40 dB.
   - **Scenario**: Parseval por bandas
     - **Given** cualquier señal
     - **When** se suman las energías de todas las bandas, incluida la banda implícita "resto"
@@ -180,7 +182,9 @@ Verificación: MSBuild y CMake sin avisos; los cuatro modos equivalentes por cap
     - **When** el usuario intenta arrastrar un corte por encima del siguiente
     - **Then** el corte se detiene en el límite y la partición sigue siendo válida.
 
-#### Historia 5.3: Dinámica por banda
+#### Historia 5.3: Dinámica por banda (completada)
+
+Implementación: `SpectrumDynamics::Update` con constantes por elemento; las barras heredan las de su banda por la frecuencia central (`BarSpectrum::AssignBands`); los medidores usan las de su banda. El escenario de independencia se verifica por construcción (el filtro de cada elemento solo lee sus propias constantes) y visualmente en el modo 6.
 - **Como**: Usuario.
 - **Quiero**: Ataque y caída distintos para graves, medios y agudos.
 - **Para**: Que el bombo tenga inercia y los platos respondan al instante.

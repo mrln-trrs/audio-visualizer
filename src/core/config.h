@@ -6,11 +6,14 @@
 #include <atomic>
 #include <cstdint>
 
+#include "core/band_layout.h"
+
 // Configuración del visualizador y su persistencia en config.json.
-// Referencia de cada clave: docs/07_user_manual_and_config.md, sección 4.
+// Referencia de cada clave: docs/07_user_manual_and_config.md, secciones 4 y 6.3.
 namespace core {
 
 struct VisualizerConfig {
+    // Sección "estilos".
     // Tiempo de respuesta al subir (ms). Bajo = ataque inmediato.
     float attack_ms = 12.0f;
     // Tiempo de caída (ms). Controla cuánto tardan las barras en bajar.
@@ -35,14 +38,20 @@ struct VisualizerConfig {
     int max_fps = 0;
     // Modo de visualización: ver core::VisualizerMode.
     int visual_mode = 0;
-    // Marcadores de pico en el modo barras.
+    // Marcadores de pico en los modos de barras y medidores.
     bool peak_hold_enabled = true;
     float peak_hold_time_ms = 350.0f;
     float peak_decay_speed = 1.8f;
     std::vector<float> peak_color_rgb{ 1.0f, 0.85f, 0.2f };
     // Dispositivo de audio seleccionado (vacío = predeterminado de Windows).
     std::string selected_device_name;
+
+    // Sección "bandas": partición del espectro y dinámica por banda (docs/11, sección 4).
+    BandConfig bands;
 };
+
+bool operator==(const BandConfig& a, const BandConfig& b);
+inline bool operator!=(const BandConfig& a, const BandConfig& b) { return !(a == b); }
 
 // La configuración se lee y se guarda en tiempo real desde la UI. El contador de versión
 // permite al hilo de análisis detectar cambios sin tomar el mutex en cada trama.
@@ -53,7 +62,7 @@ struct SharedConfigData {
 };
 
 // Carga config.json. Las claves ausentes conservan su valor por defecto; un tipo incorrecto
-// se avisa por cerr sin abortar.
+// se avisa por cerr sin abortar. La sección de bandas se valida y normaliza.
 void LoadConfig(SharedConfigData& shared, const std::string& filename);
 
 // Escribe la configuración actual en disco. Devuelve false si no se pudo abrir el archivo.

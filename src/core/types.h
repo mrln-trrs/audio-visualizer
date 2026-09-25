@@ -5,12 +5,13 @@
 // Tipos simples compartidos entre capas. Sin dependencias de Windows ni de OpenGL.
 namespace core {
 
-// Modos de visualización. Los valores enteros se guardan en config.json.
+// Modos de visualización. Los valores enteros se guardan en config.json, así que no se reordenan.
 enum VisualizerMode {
     MODE_BARS = 0,
     MODE_RADIAL = 1,
     MODE_WAVEFORM = 2,
     MODE_WATERFALL = 3,
+    MODE_BAND_METERS = 4,
     MODE_COUNT
 };
 

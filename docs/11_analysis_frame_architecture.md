@@ -1,6 +1,6 @@
 # Arquitectura de la Capa de Análisis y Descomposición en Bandas - Audio Visualizer 3.0
 
-> **Estado:** Mixto. La fase A (trama de análisis, triple búfer, modos leyendo de la trama) está implementada y verificada. Las fases B, C y D siguen siendo propuesta.  
+> **Estado:** Mixto. Las fases A (trama de análisis, triple búfer) y B (bandas configurables, métricas y dinámica por banda, medidores) están implementadas y verificadas. Las fases C y D siguen siendo propuesta.  
 > **Alcance:** Arquitectura de la capa de análisis: estructuras de datos, hilos, texturas, configuración, presupuesto y plan por fases. La base matemática está en el documento 10.  
 > **Documentos relacionados:** [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md), [04_kanban_bdd.md](04_kanban_bdd.md), [07_user_manual_and_config.md](07_user_manual_and_config.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
@@ -32,8 +32,8 @@ Esto convierte cada visualización nueva en un shader más, sin modificar el an�
 |---|---|---|
 | Salida del procesado | `AnalysisFrame` con magnitud, dB, fase, RMS, pico, flujo, centroide y mezcla (fase A, implementada) | Faltan los campos por banda (fase B) |
 | Forma de onda | Últimas 1024 muestras crudas | Solo la mezcla; no hay ondas por banda |
-| Dinámica | `attack_ms` y `release_ms` globales | Un bombo y un plato comparten la misma inercia |
-| Bandas | El mapeo a píxeles vive en `render/bar_spectrum` (fase A); no hay bandas nombradas | Fase B |
+| Dinámica | Por banda; las barras heredan la de su banda si `bars_inherit_dynamics` (fase B, implementada) | |
+| Bandas | Configurables (octavas, lineal, manual, por bin) con nombre, color, ataque, caída y ganancia; métricas por banda en la trama (fase B, implementada) | Faltan las ondas por banda (fase C) |
 | Historial | Solo en la textura del espectrograma, ya cuantizado | No reutilizable por otros modos |
 | Ventana | Hann periódica (denominador $N$), en `src/analysis/window_function.cpp` | Ya cumple la condición de la teoría, sección 4.2; sin trabajo pendiente |
 
@@ -265,12 +265,26 @@ Estado: completada. Archivos: `src/core/analysis_frame.h`, `src/core/triple_buff
 - Los cuatro modos actuales leen de la trama.
 - **Criterio.** Dado audio en reproducción, cuando se comparan capturas de los cuatro modos antes y después del cambio, entonces son visualmente equivalentes y el procesado no supera el 1 % de CPU.
 
-### Fase B. Bandas y energía
+### Fase B. Bandas y energía (implementada)
+
+Estado: completada. Archivos: `src/core/band_layout.*` (configuración, validación y partición), `src/analysis/band_metrics.*` (energía, RMS y pico por banda), `src/render/modes/band_meters_mode.*` (modo 5, tecla 6), `src/render/bar_spectrum.*` (herencia de dinámica por barra), pestaña "Bandas" en `src/ui/hud.cpp`, prueba numérica en `tests/band_metrics_test.cpp`.
+
+Resultados de la prueba numérica en la máquina de referencia (senoidal de 100 Hz a -6 dBFS, 48 kHz, FFT 2048, Hann periódica):
+
+| Comprobación | Resultado | Criterio | Observación |
+|---|---|---|---|
+| Pico de la banda "Bajo" | -6,40 dB | error menor que 1,42 dB | El error de 0,40 dB es la pérdida de festoneado de Hann: el tono cae en el bin 4,27, a 0,27 bins del centro. El criterio original de 0,5 dB solo se cumple para tonos cerca del centro de un bin; el criterio correcto es la pérdida máxima de festoneado de la ventana, 1,42 dB |
+| Fracción de la energía total en "Bajo" | 99,95 % | mayor que 99 % | |
+| Fuga hacia "Sub" (20 a 60 Hz, contigua) | -37,9 dB | menor que -31 dB | El bin 2 (46,9 Hz) está a 2,27 bins del tono, dentro del lóbulo principal de Hann (anchura 4 bins). La fuga es física, no un defecto: documento 10, sección 5.3 |
+| Fuga hacia las demás bandas | de -68 a -156 dB | menor que -46 dB | |
+| Parseval por bandas, cuatro particiones | error relativo entre $6 \cdot 10^{-9}$ y $3 \cdot 10^{-8}$ | menor que $10^{-4}$ | Incluida la banda implícita "resto" |
+| Partición contigua sin solapes | sí | | |
+
 
 - `BandDefinition`, los cuatro modos de partición, validación, HUD.
 - `band_energy`, `band_rms`, `band_peak_db`.
 - Dinámica por banda de la sección 7. Medidores de banda como nuevo modo.
-- **Criterio.** Dado el preset de siete bandas, cuando suena una senoidal de 100 Hz a -6 dBFS, entonces solo la banda "Bajo" muestra energía, con un error respecto al valor teórico inferior a 0,5 dB, y la suma de energías de todas las bandas iguala la energía total con error relativo menor que $10^{-4}$ (Parseval).
+- **Criterio.** Dado el preset de siete bandas, cuando suena una senoidal de 100 Hz a -6 dBFS, entonces la banda "Bajo" concentra más del 99 % de la energía, su pico difiere del valor teórico en menos que la pérdida máxima de festoneado de la ventana (1,42 dB para Hann), la fuga a bandas no contiguas queda 40 dB por debajo, y la suma de energías de todas las bandas más la banda "resto" iguala la energía total con error relativo menor que $10^{-4}$ (Parseval). El criterio original de 0,5 dB era incorrecto: no tenía en cuenta el festoneado.
 
 ### Fase C. Reconstrucción y osciloscopio apilado
 

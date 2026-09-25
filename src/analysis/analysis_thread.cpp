@@ -8,6 +8,8 @@
 #include <fftw3.h>
 
 #include "analysis/window_function.h"
+#include "analysis/band_metrics.h"
+#include "core/band_layout.h"
 
 namespace analysis {
 namespace {
@@ -41,9 +43,50 @@ void PreallocateFrame(core::AnalysisFrame& f) {
     f.mix_waveform.assign(core::WAVEFORM_SNAPSHOT_SIZE, 0.0f);
 }
 
+// Mantiene la partición en bandas sincronizada con la configuración y la frecuencia de muestreo.
+class BandLayoutTracker {
+public:
+    // Devuelve true si la partición cambió.
+    bool Refresh(core::SharedConfigData& shared, int sample_rate) {
+        const uint64_t version = shared.version.load(std::memory_order_relaxed);
+        bool config_changed = false;
+        if (version != seen_version_) {
+            core::BandConfig bands;
+            float attack = 12.0f, release = 160.0f;
+            {
+                std::lock_guard<std::mutex> lock(shared.mtx);
+                bands = shared.config.bands;
+                attack = shared.config.attack_ms;
+                release = shared.config.release_ms;
+            }
+            seen_version_ = version;
+            core::ValidateBandConfig(bands, attack, release);
+            if (bands != bands_) {
+                bands_ = bands;
+                config_changed = true;
+            }
+        }
+        if (config_changed || sample_rate != layout_.sample_rate) {
+            layout_ = core::BuildBandLayout(bands_, sample_rate, FFT_SIZE);
+            ++layout_version_;
+            return true;
+        }
+        return false;
+    }
+
+    const core::BandLayout& layout() const { return layout_; }
+    uint64_t version() const { return layout_version_; }
+
+private:
+    uint64_t seen_version_ = ~0ull;
+    core::BandConfig bands_;
+    core::BandLayout layout_;
+    uint64_t layout_version_ = 0;
+};
+
 } // namespace
 
-void AnalysisThread(core::AudioData& audio, core::VisualizerData& vis) {
+void AnalysisThread(core::AudioData& audio, core::VisualizerData& vis, core::SharedConfigData& config) {
     std::cout << "Analisis: hilo iniciado (FFT " << FFT_SIZE << ", salto " << HOP_SIZE << ", " << SPECTRUM_BINS << " bins)." << std::endl;
 
     const AnalysisWindow window = MakePeriodicHann(FFT_SIZE);
@@ -65,6 +108,8 @@ void AnalysisThread(core::AudioData& audio, core::VisualizerData& vis) {
         PreallocateFrame(vis.analysis.slot(i));
     }
 
+    BandLayoutTracker bands;
+    BandMetrics band_metrics; // vectores de trabajo que se intercambian con la trama de salida
     uint64_t consumed = 0; // total_samples en la última ventana procesada
     uint64_t sequence = 0;
 
@@ -85,6 +130,9 @@ void AnalysisThread(core::AudioData& audio, core::VisualizerData& vis) {
 
         const int sample_rate = audio.sample_rate.load();
         if (sample_rate <= 0) continue;
+
+        bands.Refresh(config, sample_rate);
+        const core::BandLayout& layout = bands.layout();
 
         // Métricas en el dominio del tiempo sobre la ventana sin enventanar.
         double sum_sq = 0.0;
@@ -108,7 +156,7 @@ void AnalysisThread(core::AudioData& audio, core::VisualizerData& vis) {
         out.peak = peak;
 
         const float bin_hz = static_cast<float>(sample_rate) / FFT_SIZE;
-        double flux = 0.0, weighted = 0.0, total = 0.0;
+        double flux = 0.0, weighted = 0.0, total = 0.0, energy = 0.0;
         for (int k = 0; k < SPECTRUM_BINS; ++k) {
             const float re = fft_out[k][0];
             const float im = fft_out[k][1];
@@ -119,12 +167,25 @@ void AnalysisThread(core::AudioData& audio, core::VisualizerData& vis) {
             flux += std::max(0.0f, m - previous_magnitude[k]);
             weighted += static_cast<double>(k) * bin_hz * m;
             total += m;
+            energy += static_cast<double>(m) * m;
             previous_magnitude[k] = m;
         }
         out.spectral_flux = static_cast<float>(flux);
         out.spectral_centroid_hz = total > 0.0 ? static_cast<float>(weighted / total) : 0.0f;
-        std::copy(waveform.begin(), waveform.end(), out.mix_waveform.begin());
+        out.total_energy = static_cast<float>(energy);
 
+        // Métricas por banda (docs/11, sección 3). Los vectores solo cambian de tamaño cuando
+        // cambia la partición.
+        out.band_layout_version = bands.version();
+        band_metrics.energy.swap(out.band_energy);
+        band_metrics.rms.swap(out.band_rms);
+        band_metrics.peak_db.swap(out.band_peak_db);
+        ComputeBandMetrics(out.magnitude, out.magnitude_db, layout, band_metrics);
+        band_metrics.energy.swap(out.band_energy);
+        band_metrics.rms.swap(out.band_rms);
+        band_metrics.peak_db.swap(out.band_peak_db);
+
+        std::copy(waveform.begin(), waveform.end(), out.mix_waveform.begin());
         vis.analysis.Publish();
     }
 

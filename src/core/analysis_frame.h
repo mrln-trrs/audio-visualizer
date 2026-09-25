@@ -28,14 +28,23 @@ struct AnalysisFrame {
     float peak = 0.0f;                 // max |x| en la ventana
     float spectral_flux = 0.0f;        // sum_k max(0, |X_m[k]| - |X_{m-1}[k]|)
     float spectral_centroid_hz = 0.0f; // sum_k f_k |X[k]| / sum_k |X[k]|
+    float total_energy = 0.0f;         // sum_k |X[k]|^2 sobre todos los bins (Parseval)
+
+    // Bandas (fase B). K elementos cada vector; la partición la define BandLayout, que el render
+    // reconstruye con la misma configuración. band_layout_version cambia cuando cambia la partición.
+    uint64_t band_layout_version = 0;
+    std::vector<float> band_energy;    // sum |X[k]|^2 sobre los bins de la banda
+    std::vector<float> band_rms;       // raíz de energía / número de bins
+    std::vector<float> band_peak_db;   // máximo de magnitude_db en la banda
 
     // Mezcla en el dominio del tiempo: las WAVEFORM_SNAPSHOT_SIZE muestras más recientes.
     std::vector<float> mix_waveform;
 
-    // Fase B (docs/11, sección 3): band_energy, band_rms, band_peak_db, band_waveform.
+    // Fase C (docs/11, sección 5.3): band_waveform.
 
     float bin_resolution_hz() const { return sample_rate > 0 ? static_cast<float>(sample_rate) / fft_size : 0.0f; }
     bool valid() const { return sequence > 0 && sample_rate > 0 && !magnitude.empty(); }
+    int band_count() const { return static_cast<int>(band_energy.size()); }
 };
 
 } // namespace core

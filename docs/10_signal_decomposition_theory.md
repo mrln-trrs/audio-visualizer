@@ -154,6 +154,13 @@ No existe una "frecuencia unitaria" observable en tiempo real. Una senoidal pura
 
 Distinguir dos notas graves separadas un semitono (unos 2,5 Hz a 40 Hz) exigiría ventanas de casi medio segundo, con un cuarto de segundo de retraso visual. Ninguna fórmula evita este coste: es la desigualdad 5.1. Lo que sí puede hacerse es usar ventanas distintas por rango, que es la sección 7.
 
+### 5.4 Confirmación empírica en el proyecto
+
+La prueba `tests/band_metrics_test.cpp` (fase B) sintetiza una senoidal de 100 Hz a -6 dBFS y la analiza con la misma cadena que el programa. Dos resultados ilustran esta sección:
+
+- El pico medido es -6,40 dB, no -6,00. El tono cae en el bin 4,27, a 0,27 bins del centro, y la ventana de Hann atenúa en esa posición unos 0,4 dB (pérdida de festoneado; el máximo, a medio bin, es 1,42 dB). Cualquier medidor por bin comparte esta incertidumbre.
+- La banda contigua "Sub" (20 a 60 Hz) recibe -37,9 dB. Su bin más alto, el 2 (46,9 Hz), está a 2,27 bins del tono, dentro del lóbulo principal de Hann, que abarca 4 bins. Un criterio que exigiera "energía cero" fuera de la banda del tono sería incompatible con la ecuación 5.1.
+
 ## 6. Cuánta información se genera
 
 ### 6.1 Muestreo de señales paso banda

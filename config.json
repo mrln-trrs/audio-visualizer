@@ -2,22 +2,14 @@
   "estilos": {
     "amplitude_factor": 1.0,
     "attack_ms": 12.0,
-    "base_color_rgb": [
-      0.65,
-      0.15,
-      0.15
-    ],
+    "base_color_rgb": [ 0.65, 0.15, 0.15 ],
     "bin_grouping_factor": 10.0,
     "dynamic_range_db": 60.0,
     "frequency_scale": "linear",
     "max_fps": 0,
     "max_frequency": 16000.0,
     "min_frequency": 30.0,
-    "peak_color_rgb": [
-      1.0,
-      0.85,
-      0.2
-    ],
+    "peak_color_rgb": [ 1.0, 0.85, 0.2 ],
     "peak_decay_speed": 1.8,
     "peak_hold_enabled": true,
     "peak_hold_time_ms": 350.0,
@@ -25,5 +17,28 @@
     "selected_device_name": "",
     "visual_mode": 0,
     "vsync": true
+  },
+  "bandas": {
+    "mode": "manual",
+    "f_min": 20.0,
+    "f_max": 20000.0,
+    "divisions_per_octave": 1,
+    "linear_band_count": 8,
+    "cuts_hz": [ 60.0, 250.0, 500.0, 2000.0, 4000.0, 6000.0 ],
+    "names": [ "Sub", "Bajo", "Medios bajos", "Medios", "Medios altos", "Presencia", "Brillo" ],
+    "attack_ms": [ 10.0, 12.0, 12.0, 10.0, 8.0, 6.0, 5.0 ],
+    "release_ms": [ 250.0, 200.0, 160.0, 140.0, 110.0, 90.0, 80.0 ],
+    "gain": [ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ],
+    "colors_rgb": [
+      [ 0.60, 0.10, 0.80 ],
+      [ 0.20, 0.30, 1.00 ],
+      [ 0.10, 0.70, 0.90 ],
+      [ 0.20, 0.90, 0.40 ],
+      [ 0.90, 0.90, 0.20 ],
+      [ 1.00, 0.60, 0.10 ],
+      [ 1.00, 0.30, 0.30 ]
+    ],
+    "mask_ramp_bins": 1.5,
+    "bars_inherit_dynamics": true
   }
 }

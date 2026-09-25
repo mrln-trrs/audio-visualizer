@@ -48,12 +48,14 @@ target_include_directories(imgui_lib PUBLIC
 # -----------------------------------------------------------------------------
 set(PROJECT_SOURCES
     src/analysis/analysis_thread.cpp
+    src/analysis/band_metrics.cpp
     src/analysis/window_function.cpp
     src/app/application.cpp
     src/audio/capture_session.cpp
     src/audio/capture_thread.cpp
     src/audio/device_enumerator.cpp
     src/audio/sample_format.cpp
+    src/core/band_layout.cpp
     src/core/config.cpp
     src/core/types.cpp
     src/main.cpp
@@ -62,6 +64,7 @@ set(PROJECT_SOURCES
     src/render/frame_limiter.cpp
     src/render/fullscreen_quad.cpp
     src/render/gl_window.cpp
+    src/render/modes/band_meters_mode.cpp
     src/render/modes/bars_mode.cpp
     src/render/modes/radial_mode.cpp
     src/render/modes/waterfall_mode.cpp
@@ -73,6 +76,7 @@ set(PROJECT_SOURCES
     src/ui/telemetry.cpp
     src/ui/theme.cpp
     src/analysis/analysis_thread.h
+    src/analysis/band_metrics.h
     src/analysis/window_function.h
     src/app/application.h
     src/audio/capture_session.h
@@ -80,6 +84,7 @@ set(PROJECT_SOURCES
     src/audio/device_enumerator.h
     src/audio/sample_format.h
     src/core/analysis_frame.h
+    src/core/band_layout.h
     src/core/config.h
     src/core/constants.h
     src/core/shared_state.h
@@ -91,6 +96,7 @@ set(PROJECT_SOURCES
     src/render/frame_limiter.h
     src/render/fullscreen_quad.h
     src/render/gl_window.h
+    src/render/modes/band_meters_mode.h
     src/render/modes/bars_mode.h
     src/render/modes/radial_mode.h
     src/render/modes/visual_mode.h
@@ -140,6 +146,26 @@ target_link_libraries(audio-visualizer PRIVATE
     avrt.lib
     uuid.lib
 )
+
+# -----------------------------------------------------------------------------
+# Pruebas numéricas (sin audio ni ventana): ctest --test-dir build -C Release
+# -----------------------------------------------------------------------------
+enable_testing()
+add_executable(band_metrics_test
+    tests/band_metrics_test.cpp
+    src/core/band_layout.cpp
+    src/analysis/window_function.cpp
+    src/analysis/band_metrics.cpp
+)
+target_include_directories(band_metrics_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${FFTW_DIR})
+target_link_directories(band_metrics_test PRIVATE ${FFTW_DIR})
+target_link_libraries(band_metrics_test PRIVATE libfftw3f-3.lib)
+if(MSVC)
+    target_compile_options(band_metrics_test PRIVATE /W4 /utf-8 /EHsc /permissive-)
+endif()
+add_custom_command(TARGET band_metrics_test POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${FFTW_DIR}/libfftw3f-3.dll" "$<TARGET_FILE_DIR:band_metrics_test>/libfftw3f-3.dll")
+add_test(NAME band_metrics COMMAND band_metrics_test)
 
 # -----------------------------------------------------------------------------
 # Post-build: DLL, shaders y config.json junto al ejecutable

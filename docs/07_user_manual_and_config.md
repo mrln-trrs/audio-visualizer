@@ -27,6 +27,7 @@ Este documento proporciona una guía exhaustiva para el usuario final sobre la o
 | **`2`** | Modo Radial | Activa el espectro circular procedural con pulso reactivo en el centro. |
 | **`3`** | Modo Osciloscopio | Activa la forma de onda continua en el dominio del tiempo estilo tubo analógico CRT. |
 | **`4`** | Modo Cascada 2D | Activa el espectrograma continuo con mapa de calor térmico (*Waterfall*). |
+| **`6`** | Modo Medidores por Banda | Una columna por banda configurada, con nombre, rango en Hz, nivel en dB, marcador de pico y color propio. La tecla `5` queda reservada al osciloscopio apilado (fase C). |
 | **`Alt + F4`** | Salir | Cierra limpiamente la aplicación y libera todos los recursos. |
 
 ---
@@ -180,9 +181,9 @@ Audio Visualizer 2.0  |  [Barras]  |  144 fps (144 Hz, vsync)  |  100 esp/s  |  
 
 Esta sección documenta con antelación lo que la 3.0 añadiría a la experiencia de usuario, para que el diseño pueda revisarse antes de implementarse. Ninguna de estas opciones existe en el ejecutable actual.
 
-### 6.1 Bandas configurables
+### 6.1 Bandas configurables (disponible desde la fase B)
 
-Desde una pestaña "Bandas" del panel se elegirá cómo dividir el espectro:
+La pestaña "Bandas" del panel permite dividir el espectro:
 
 | Modo | Qué hace | Cuándo usarlo |
 |---|---|---|
@@ -190,26 +191,30 @@ Desde una pestaña "Bandas" del panel se elegirá cómo dividir el espectro:
 | Lineal | Bandas de igual anchura en hercios | Análisis técnico |
 | Manual | Cortes arrastrables sobre una regla logarítmica, con nombre y color | Presets personales; el preset por defecto es el de siete bandas de mezcla (Sub, Bajo, Medios bajos, Medios, Medios altos, Presencia, Brillo) |
 
-Cada banda tendrá su propio ataque y caída. Un aviso indicará cuándo una banda es demasiado estrecha para la ventana de análisis actual y qué latencia haría falta para resolverla, porque resolución en frecuencia y tiempo de respuesta están ligados por una ley física, no por una limitación del programa (documento 10, sección 5).
+Cada banda tiene su propio ataque, caída, ganancia, nombre y color, editables en una tabla, y la pestaña muestra en vivo el pico, el RMS y el porcentaje de energía de cada banda. Un aviso indica cuándo una banda es demasiado estrecha para la ventana de análisis actual y qué latencia haría falta para resolverla, porque resolución en frecuencia y tiempo de respuesta están ligados por una ley física, no por una limitación del programa (documento 10, sección 5).
 
 ### 6.2 Modos nuevos
 
 | Tecla | Modo | Qué muestra |
 |---|---|---|
-| `5` | Osciloscopio apilado | Una traza por banda, con su color, y debajo la mezcla. La suma de las trazas es exactamente la mezcla |
-| `6` | Medidores por banda | Columnas o arcos con la energía de cada banda y su marcador de pico |
+| `5` | Osciloscopio apilado (fase C, pendiente) | Una traza por banda, con su color, y debajo la mezcla. La suma de las trazas es exactamente la mezcla |
+| `6` | Medidores por banda (disponible) | Una columna por banda con nombre, rango, nivel en dB, pico y color |
 
-### 6.3 Claves de configuración previstas
+### 6.3 Claves de configuración
 
-Se añadirían dos secciones a `config.json`, separadas de `"estilos"`:
+La sección `"bandas"` está disponible desde la fase B (las claves marcadas como fase C o Fluent siguen previstas). Se añade a `config.json` separada de `"estilos"`:
 
 | Sección | Clave | Tipo | Defecto | Significado |
 |---|---|---|---|---|
-| `analisis` | `fft_size` | entero, potencia de dos | 2048 | Tamaño de la ventana. Más grande, más resolución en graves y más latencia |
+| `analisis` (previsto) | `fft_size` | entero, potencia de dos | 2048 | Tamaño de la ventana. Más grande, más resolución en graves y más latencia |
 | `analisis` | `hop_size` | entero | 256 | Avance entre análisis. Debe dividir a `fft_size` con cociente al menos 4 |
 | `analisis` | `history_frames` | entero | 512 | Tramas conservadas para espectrogramas y estelas |
 | `analisis` | `mask_ramp_bins` | número | 1.5 | Suavidad del borde entre bandas contiguas |
 | `bandas` | `mode` | `octaves`, `linear`, `manual`, `per_bin` | `manual` | Modo de partición |
+| `bandas` | `f_min`, `f_max` | número | 20, 20000 | Rango cubierto; fuera queda la banda implícita "resto" |
+| `bandas` | `divisions_per_octave` | entero | 1 | Modo `octaves` |
+| `bandas` | `linear_band_count` | entero | 8 | Modo `linear` |
+| `bandas` | `bars_inherit_dynamics` | booleano | true | Las barras del modo 1 usan el ataque y la caída de su banda |
 | `bandas` | `cuts_hz` | lista creciente | 60, 250, 500, 2000, 4000, 6000 | Cortes del modo manual |
 | `bandas` | `names`, `colors_rgb`, `gain`, `attack_ms`, `release_ms` | listas de longitud `cuts_hz + 1` | preset de siete bandas | Propiedades por banda |
 | `estilos` | `material` | `none`, `acrylic_app`, `mica`, `acrylic_system` | `acrylic_app` | Material del panel y de la ventana |

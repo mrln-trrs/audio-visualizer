@@ -2,6 +2,9 @@
 
 #include <vector>
 #include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
 #include <imgui.h>
 
 #include "ui/theme.h"
@@ -12,6 +15,7 @@ namespace {
 
 const ImVec4 kAccent(0.35f, 0.75f, 1.0f, 1.0f);
 const ImVec4 kOk(0.2f, 0.9f, 0.4f, 1.0f);
+const ImVec4 kWarn(1.0f, 0.67f, 0.3f, 1.0f);
 
 void PublishConfig(HudContext& ctx) {
     std::lock_guard<std::mutex> lock(ctx.shared_config.mtx);
@@ -19,23 +23,28 @@ void PublishConfig(HudContext& ctx) {
     ctx.shared_config.version.fetch_add(1);
 }
 
-void TabModes(HudState& state, HudContext& ctx) {
+// ---------------------------------------------------------------- Modos y efectos
+void TabModes(HudContext& ctx) {
     core::VisualizerConfig& cfg = ctx.cfg;
     ImGui::Spacing();
     ImGui::TextColored(kAccent, "Seleccion de Modo Visual:");
 
-    if (ImGui::RadioButton("1. Barras de Espectro (Ecualizador)", cfg.visual_mode == core::MODE_BARS)) cfg.visual_mode = core::MODE_BARS;
-    ImGui::SameLine(); HelpMarker("Frecuencias en columnas verticales con marcadores de pico.");
-    if (ImGui::RadioButton("2. Radial / Circular (Anillo Reactivo)", cfg.visual_mode == core::MODE_RADIAL)) cfg.visual_mode = core::MODE_RADIAL;
-    ImGui::SameLine(); HelpMarker("Mapeo polar en anillo con nucleo pulsante al ritmo de los graves.");
-    if (ImGui::RadioButton("3. Osciloscopio / Forma de Onda", cfg.visual_mode == core::MODE_WAVEFORM)) cfg.visual_mode = core::MODE_WAVEFORM;
-    ImGui::SameLine(); HelpMarker("Muestras crudas de audio en tiempo real con haz tipo CRT.");
-    if (ImGui::RadioButton("4. Espectrograma Cascada 2D (Waterfall)", cfg.visual_mode == core::MODE_WATERFALL)) cfg.visual_mode = core::MODE_WATERFALL;
-    ImGui::SameLine(); HelpMarker("Historial de frecuencias desplazandose hacia abajo con paleta termica.");
+    struct Entry { const char* label; int mode; const char* help; };
+    static const Entry entries[] = {
+        { "1. Barras de Espectro (Ecualizador)", core::MODE_BARS, "Frecuencias en columnas verticales con marcadores de pico." },
+        { "2. Radial / Circular (Anillo Reactivo)", core::MODE_RADIAL, "Mapeo polar en anillo con nucleo pulsante al ritmo de los graves." },
+        { "3. Osciloscopio / Forma de Onda", core::MODE_WAVEFORM, "Muestras crudas de audio en tiempo real con haz tipo CRT." },
+        { "4. Espectrograma Cascada 2D (Waterfall)", core::MODE_WATERFALL, "Historial de frecuencias desplazandose hacia abajo con paleta termica." },
+        { "6. Medidores por Banda", core::MODE_BAND_METERS, "Una columna por banda configurada, con nombre, rango, nivel en dB y pico." },
+    };
+    for (const auto& e : entries) {
+        if (ImGui::RadioButton(e.label, cfg.visual_mode == e.mode)) cfg.visual_mode = e.mode;
+        ImGui::SameLine(); HelpMarker(e.help);
+    }
 
     ImGui::Separator();
     ImGui::Spacing();
-    ImGui::TextColored(kAccent, "Mecanica de Picos (Peak-Hold en Barras):");
+    ImGui::TextColored(kAccent, "Mecanica de Picos (Peak-Hold):");
     ImGui::Checkbox("Habilitar Marcadores de Pico", &cfg.peak_hold_enabled);
     ImGui::SameLine(); HelpMarker("Sostiene una marca en el valor mas alto antes de descender por gravedad.");
 
@@ -45,9 +54,9 @@ void TabModes(HudState& state, HudContext& ctx) {
     ImGui::SliderFloat("Velocidad de Caida", &cfg.peak_decay_speed, 0.5f, 5.0f, "%.1fx");
     ImGui::SameLine(); HelpMarker("Rapidez de descenso de los picos cuando se agota el retardo.");
     if (!cfg.peak_hold_enabled) ImGui::EndDisabled();
-    (void)state;
 }
 
+// ---------------------------------------------------------------- DSP y dispositivos
 void TabDsp(HudState& state, HudContext& ctx) {
     core::VisualizerConfig& cfg = ctx.cfg;
     ImGui::Spacing();
@@ -94,19 +103,19 @@ void TabDsp(HudState& state, HudContext& ctx) {
 
     ImGui::Separator();
     ImGui::Spacing();
-    ImGui::TextColored(kAccent, "Parametros de Respuesta Temporal:");
+    ImGui::TextColored(kAccent, "Respuesta Temporal Global:");
     ImGui::SliderFloat("Ganancia", &cfg.amplitude_factor, 0.1f, 3.0f, "%.2fx");
     ImGui::SameLine(); HelpMarker("Multiplicador vertical del espectro.");
     ImGui::SliderFloat("Ataque", &cfg.attack_ms, 1.0f, 80.0f, "%.0f ms");
-    ImGui::SameLine(); HelpMarker("Tiempo de respuesta al subir. Valores bajos reaccionan al instante.");
+    ImGui::SameLine(); HelpMarker("Tiempo de respuesta al subir, para las barras que no heredan de una banda.");
     ImGui::SliderFloat("Caida (Decay)", &cfg.release_ms, 20.0f, 500.0f, "%.0f ms");
-    ImGui::SameLine(); HelpMarker("Tiempo de descenso. Valores altos suavizan la caida.");
+    ImGui::SameLine(); HelpMarker("Tiempo de descenso, para las barras que no heredan de una banda.");
     ImGui::SliderFloat("Rango Dinamico", &cfg.dynamic_range_db, 20.0f, 100.0f, "%.0f dB");
     ImGui::SameLine(); HelpMarker("0 dBFS arriba, -rango abajo.");
 
     ImGui::Separator();
     ImGui::Spacing();
-    ImGui::TextColored(kAccent, "Distribucion de Frecuencias:");
+    ImGui::TextColored(kAccent, "Distribucion de Frecuencias (modo Barras):");
     int scale_idx = (cfg.frequency_scale == "log") ? 1 : 0;
     if (ImGui::RadioButton("Lineal (Hz constantes)", &scale_idx, 0)) cfg.frequency_scale = "linear";
     ImGui::SameLine();
@@ -122,6 +131,143 @@ void TabDsp(HudState& state, HudContext& ctx) {
     }
 }
 
+// ---------------------------------------------------------------- Bandas
+void TabBands(HudState& state, HudContext& ctx) {
+    core::VisualizerConfig& cfg = ctx.cfg;
+    core::BandConfig& b = cfg.bands;
+    bool changed = false;
+    ImGui::Spacing();
+
+    ImGui::TextColored(kAccent, "Particion del Espectro:");
+    static const char* kModes[] = { "manual", "octaves", "linear", "per_bin" };
+    static const char* kModeLabels[] = { "Manual (cortes en Hz)", "Octavas", "Lineal (anchura constante)", "Por bin de la FFT" };
+    int mode_idx = 0;
+    for (int i = 0; i < 4; ++i) if (b.mode == kModes[i]) mode_idx = i;
+    if (ImGui::Combo("Modo", &mode_idx, kModeLabels, 4)) { b.mode = kModes[mode_idx]; changed = true; }
+    ImGui::SameLine(); HelpMarker("Manual: cortes editables con nombre y color por banda. Octavas: reparto musical. Lineal: bandas de igual anchura. Por bin: una banda por bin, solo para metricas.");
+
+    if (ImGui::DragFloatRange2("Rango", &b.f_min, &b.f_max, 5.0f, 1.0f, 24000.0f, "Min: %.0f Hz", "Max: %.0f Hz")) changed = true;
+    if (b.mode == "octaves") {
+        if (ImGui::SliderInt("Divisiones por octava", &b.divisions_per_octave, 1, 12)) changed = true;
+    }
+    else if (b.mode == "linear") {
+        if (ImGui::SliderInt("Numero de bandas", &b.linear_band_count, 1, 64)) changed = true;
+    }
+    else if (b.mode == "manual") {
+        ImGui::TextDisabled("Cortes interiores (Hz):");
+        for (size_t i = 0; i < b.cuts_hz.size(); ++i) {
+            ImGui::PushID(static_cast<int>(i));
+            const float lo = (i == 0 ? b.f_min : b.cuts_hz[i - 1]) + 1.0f;
+            const float hi = (i + 1 < b.cuts_hz.size() ? b.cuts_hz[i + 1] : b.f_max) - 1.0f;
+            ImGui::SetNextItemWidth(140);
+            if (ImGui::DragFloat("##cut", &b.cuts_hz[i], 2.0f, lo, hi, "%.0f Hz")) { b.cuts_hz[i] = std::clamp(b.cuts_hz[i], lo, hi); changed = true; }
+            ImGui::SameLine();
+            if (ImGui::SmallButton("Quitar")) { b.cuts_hz.erase(b.cuts_hz.begin() + i); changed = true; ImGui::PopID(); break; }
+            ImGui::PopID();
+        }
+        if (b.cuts_hz.size() < 63 && ImGui::Button("Anadir corte")) {
+            const float last = b.cuts_hz.empty() ? b.f_min : b.cuts_hz.back();
+            b.cuts_hz.push_back(std::sqrt(last * b.f_max)); // media geometrica hasta f_max
+            changed = true;
+        }
+    }
+    else {
+        ImGui::TextDisabled("Una banda por bin entre f_min y f_max. Nombres y colores se generan.");
+    }
+
+    ImGui::Separator();
+    if (ImGui::Checkbox("Las barras heredan ataque y caida de su banda", &b.bars_inherit_dynamics)) changed = true;
+    ImGui::SameLine(); HelpMarker("En el modo Barras, cada barra usa las constantes de la banda que contiene su frecuencia central.");
+    if (ImGui::Button("Restaurar preset de 7 bandas")) { b = core::BandConfig(); changed = true; state.Toast("Preset de 7 bandas restaurado", ctx.now); }
+
+    if (changed) core::ValidateBandConfig(b, cfg.attack_ms, cfg.release_ms);
+
+    // Tabla por banda con la partición real (bins) del render.
+    ImGui::Separator();
+    ImGui::Spacing();
+    const core::BandLayout& layout = ctx.bands;
+    const int count = layout.count();
+    ImGui::TextColored(kAccent, "Bandas (%d) a %.2f Hz por bin:", count, layout.bin_resolution_hz);
+    int narrow = 0;
+    for (const auto& band : layout.bands) if (band.too_narrow) ++narrow;
+    if (narrow > 0) {
+        ImGui::TextColored(kWarn, "%d banda(s) mas estrechas que un bin: su nivel es una interpolacion. Resolverlas exige una FFT mayor (mas latencia).", narrow);
+    }
+
+    if (count > 64) {
+        ImGui::TextDisabled("Demasiadas bandas para editar una a una; se muestran las metricas agregadas.");
+        return;
+    }
+    const int rows = std::min<int>(count, static_cast<int>(b.names.size()));
+    if (ImGui::BeginTable("BandTable", 6, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV)) {
+        ImGui::TableSetupColumn("Nombre");
+        ImGui::TableSetupColumn("Rango / bins");
+        ImGui::TableSetupColumn("Color");
+        ImGui::TableSetupColumn("Ataque");
+        ImGui::TableSetupColumn("Caida");
+        ImGui::TableSetupColumn("Ganancia");
+        ImGui::TableHeadersRow();
+        for (int i = 0; i < rows; ++i) {
+            const core::BandDefinition& def = layout.bands[i];
+            ImGui::TableNextRow();
+            ImGui::PushID(i);
+
+            ImGui::TableNextColumn();
+            char name_buf[48];
+            std::snprintf(name_buf, sizeof(name_buf), "%s", b.names[i].c_str());
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::InputText("##name", name_buf, sizeof(name_buf))) { b.names[i] = name_buf; changed = true; }
+
+            ImGui::TableNextColumn();
+            if (def.too_narrow) ImGui::TextColored(kWarn, "%.0f-%.0f Hz (%d bin)", def.f_low_hz, def.f_high_hz, def.bin_high - def.bin_low);
+            else ImGui::Text("%.0f-%.0f Hz (%d bins)", def.f_low_hz, def.f_high_hz, def.bin_high - def.bin_low);
+
+            ImGui::TableNextColumn();
+            if (ImGui::ColorEdit3("##color", b.colors_rgb[i].data(), ImGuiColorEditFlags_NoInputs)) changed = true;
+
+            ImGui::TableNextColumn();
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::DragFloat("##attack", &b.attack_ms[i], 0.5f, 1.0f, 500.0f, "%.0f ms")) changed = true;
+
+            ImGui::TableNextColumn();
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::DragFloat("##release", &b.release_ms[i], 1.0f, 10.0f, 2000.0f, "%.0f ms")) changed = true;
+
+            ImGui::TableNextColumn();
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::DragFloat("##gain", &b.gain[i], 0.01f, 0.0f, 4.0f, "%.2fx")) changed = true;
+
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
+    }
+
+    // Métricas en vivo de la trama.
+    if (ctx.frame.valid() && ctx.frame.band_count() == count && count <= 64) {
+        ImGui::Spacing();
+        ImGui::TextColored(kAccent, "Metricas por banda (ultima trama):");
+        if (ImGui::BeginTable("BandMetrics", 4, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg)) {
+            ImGui::TableSetupColumn("Banda");
+            ImGui::TableSetupColumn("Pico dBFS");
+            ImGui::TableSetupColumn("RMS dBFS");
+            ImGui::TableSetupColumn("Energia %");
+            ImGui::TableHeadersRow();
+            const float total = std::max(1e-12f, ctx.frame.total_energy);
+            for (int i = 0; i < count; ++i) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(layout.bands[i].name.c_str());
+                ImGui::TableNextColumn(); ImGui::Text("%.1f", ctx.frame.band_peak_db[i]);
+                ImGui::TableNextColumn(); ImGui::Text("%.1f", 20.0f * std::log10(ctx.frame.band_rms[i] + 1e-9f));
+                ImGui::TableNextColumn(); ImGui::Text("%.1f", 100.0f * ctx.frame.band_energy[i] / total);
+            }
+            ImGui::EndTable();
+        }
+    }
+
+    if (changed) core::ValidateBandConfig(b, cfg.attack_ms, cfg.release_ms);
+}
+
+// ---------------------------------------------------------------- Colores
 void TabColors(HudContext& ctx) {
     core::VisualizerConfig& cfg = ctx.cfg;
     ImGui::Spacing();
@@ -157,6 +303,7 @@ void TabColors(HudContext& ctx) {
     }
 }
 
+// ---------------------------------------------------------------- Telemetría
 void TabTelemetry(HudState& state, HudContext& ctx) {
     core::VisualizerConfig& cfg = ctx.cfg;
     const Telemetry& t = ctx.telemetry;
@@ -191,6 +338,7 @@ void TabTelemetry(HudState& state, HudContext& ctx) {
         ImGui::Text("Pico:"); ImGui::NextColumn(); ImGui::Text("%.1f dBFS", peak_db); ImGui::NextColumn();
         ImGui::Text("Flujo espectral:"); ImGui::NextColumn(); ImGui::Text("%.3f", f.spectral_flux); ImGui::NextColumn();
         ImGui::Text("Centroide:"); ImGui::NextColumn(); ImGui::Text("%.0f Hz", f.spectral_centroid_hz); ImGui::NextColumn();
+        ImGui::Text("Bandas:"); ImGui::NextColumn(); ImGui::Text("%d", f.band_count()); ImGui::NextColumn();
         ImGui::Columns(1);
     }
     else {
@@ -210,12 +358,8 @@ void TabTelemetry(HudState& state, HudContext& ctx) {
     ImGui::TextColored(kAccent, "Persistencia de Ajustes:");
     if (ImGui::Button("Guardar en config.json", ImVec2(180, 32))) {
         PublishConfig(ctx);
-        if (core::SaveConfig(ctx.shared_config, "config.json")) {
-            state.Toast("Configuracion guardada", ctx.now);
-        }
-        else {
-            state.Toast("No se pudo escribir config.json", ctx.now);
-        }
+        if (core::SaveConfig(ctx.shared_config, "config.json")) state.Toast("Configuracion guardada", ctx.now);
+        else state.Toast("No se pudo escribir config.json", ctx.now);
     }
     ImGui::SameLine();
     if (ImGui::Button("Restaurar por Defecto", ImVec2(160, 32))) {
@@ -235,9 +379,9 @@ void DrawHud(HudState& state, HudContext& ctx) {
     if (!state.visible) return;
 
     ImGui::SetNextWindowPos(ImVec2(24, 24), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(480, 600), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(560, 640), ImGuiCond_FirstUseEver);
 
-    if (ImGui::Begin("Audio Visualizer 2.0  -  Panel de Control", &state.visible, ImGuiWindowFlags_NoCollapse)) {
+    if (ImGui::Begin("Audio Visualizer 3.0  -  Panel de Control", &state.visible, ImGuiWindowFlags_NoCollapse)) {
         ImGui::TextColored(kAccent, "ESTADO:");
         ImGui::SameLine();
         ImGui::Text("%s", core::VisualizerModeName(ctx.cfg.visual_mode));
@@ -246,10 +390,11 @@ void DrawHud(HudState& state, HudContext& ctx) {
         ImGui::Spacing();
 
         if (ImGui::BeginTabBar("VisualizerTabBar", ImGuiTabBarFlags_None)) {
-            if (ImGui::BeginTabItem(" Modos y Efectos ")) { TabModes(state, ctx); ImGui::EndTabItem(); }
-            if (ImGui::BeginTabItem(" DSP y Dinamica ")) { TabDsp(state, ctx); ImGui::EndTabItem(); }
-            if (ImGui::BeginTabItem(" Color y Temas ")) { TabColors(ctx); ImGui::EndTabItem(); }
-            if (ImGui::BeginTabItem(" Telemetria y Sistema ")) { TabTelemetry(state, ctx); ImGui::EndTabItem(); }
+            if (ImGui::BeginTabItem(" Modos ")) { TabModes(ctx); ImGui::EndTabItem(); }
+            if (ImGui::BeginTabItem(" DSP y Audio ")) { TabDsp(state, ctx); ImGui::EndTabItem(); }
+            if (ImGui::BeginTabItem(" Bandas ")) { TabBands(state, ctx); ImGui::EndTabItem(); }
+            if (ImGui::BeginTabItem(" Color ")) { TabColors(ctx); ImGui::EndTabItem(); }
+            if (ImGui::BeginTabItem(" Telemetria ")) { TabTelemetry(state, ctx); ImGui::EndTabItem(); }
             ImGui::EndTabBar();
         }
     }

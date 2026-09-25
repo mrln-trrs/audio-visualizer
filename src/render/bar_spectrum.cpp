@@ -29,6 +29,19 @@ void BarSpectrum::RebuildMap(const MapKey& key, int fft_size) {
         lo_[i] = static_cast<float>(std::clamp(f0 / bin_hz, 0.0, max_bin));
         hi_[i] = static_cast<float>(std::clamp(f1 / bin_hz, 0.0, max_bin));
     }
+    assigned_layout_version_ = ~0ull; // fuerza reasignar bandas
+}
+
+void BarSpectrum::AssignBands(const core::BandLayout& bands, const core::VisualizerConfig& cfg) {
+    const int n = key_.num_bars;
+    attack_ms_.resize(n);
+    release_ms_.resize(n);
+    for (int i = 0; i < n; ++i) {
+        const int center_bin = static_cast<int>(0.5f * (lo_[i] + hi_[i]));
+        const int b = bands.BandForBin(center_bin);
+        attack_ms_[i] = b >= 0 ? bands.bands[b].attack_ms : cfg.attack_ms;
+        release_ms_[i] = b >= 0 ? bands.bands[b].release_ms : cfg.release_ms;
+    }
 }
 
 // Si la banda abarca menos de un bin, interpola en su centro (evita barras permanentemente
@@ -49,9 +62,12 @@ float BarSpectrum::SampleBand(const std::vector<float>& magnitude, float lo, flo
     return peak;
 }
 
-void BarSpectrum::Update(const core::AnalysisFrame& frame, int num_bars, const core::VisualizerConfig& cfg) {
+void BarSpectrum::Update(const core::AnalysisFrame& frame, int num_bars, const core::VisualizerConfig& cfg,
+                         const core::BandLayout* bands, uint64_t band_layout_version) {
     if (!frame.valid() || num_bars <= 0) {
         values_.assign(std::max(0, num_bars), 0.0f);
+        attack_ms_.clear();
+        release_ms_.clear();
         return;
     }
 
@@ -63,6 +79,17 @@ void BarSpectrum::Update(const core::AnalysisFrame& frame, int num_bars, const c
     key.min_hz = cfg.min_frequency;
     key.max_hz = cfg.max_frequency;
     if (!(key == key_)) RebuildMap(key, frame.fft_size);
+
+    if (bands && bands->count() > 0) {
+        if (assigned_layout_version_ != band_layout_version) {
+            AssignBands(*bands, cfg);
+            assigned_layout_version_ = band_layout_version;
+        }
+    }
+    else {
+        attack_ms_.clear();
+        release_ms_.clear();
+    }
 
     // Magnitud lineal -> dB -> [0, 1] sobre el rango dinámico configurado.
     const float range_db = std::max(1.0f, cfg.dynamic_range_db);

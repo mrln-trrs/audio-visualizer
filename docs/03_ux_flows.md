@@ -111,11 +111,11 @@ stateDiagram-v2
 | Tecla | Función | Fuente de datos |
 |---|---|---|
 | `5` | Osciloscopio apilado por bandas, con la mezcla debajo | Ondas por banda (documento 11, sección 8) |
-| `6` | Medidores de energía por banda con marcador de pico | Estado por banda |
+| `6` | Medidores de energía por banda con marcador de pico (implementado en la fase B) | Estado por banda |
 | `F11` | Pantalla completa sin bordes | Ya previsto en la 2.0, pendiente |
 | `Ctrl+B` | Abrir directamente la pestaña de bandas del HUD | HUD |
 
-### Estado adicional: Edición de Bandas
+### Estado adicional: Edición de Bandas (implementado en la fase B, salvo la regla logarítmica arrastrable)
 
 - **Comportamiento**: Desde la pestaña "Bandas" del HUD el usuario elige el modo de partición (octavas, lineal, manual), añade o arrastra cortes en Hz sobre una regla logarítmica, nombra y colorea cada banda y ajusta su ataque y caída. Cada cambio incrementa la versión de configuración; el hilo de procesado reconstruye máscaras y bandas en la siguiente trama sin detener la captura.
 - **Feedback visual**: Las trazas del osciloscopio apilado se reordenan y recoloran en el siguiente cuadro. Si un corte deja una banda con menos de dos bins, la interfaz lo señala y muestra la latencia que haría falta para resolverla (documento 10, sección 5.3).

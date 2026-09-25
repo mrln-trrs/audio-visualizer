@@ -4,9 +4,10 @@
 
 #include "core/config.h"
 #include "core/shared_state.h"
+#include "core/band_layout.h"
 #include "ui/telemetry.h"
 
-// Panel de control Dear ImGui: modos, DSP, dispositivos, colores, telemetría y persistencia.
+// Panel de control Dear ImGui: modos, DSP, bandas, dispositivos, colores, telemetría y persistencia.
 namespace ui {
 
 struct HudState {
@@ -23,7 +24,8 @@ struct HudContext {
     core::VisualizerData& vis;
     core::AudioData& audio;
     const Telemetry& telemetry;
-    const core::AnalysisFrame& frame;     // última trama de análisis, para la pestaña de telemetría
+    const core::AnalysisFrame& frame;     // última trama de análisis
+    const core::BandLayout& bands;        // partición actual, para mostrar bins y avisos
     double now;
 };
 
