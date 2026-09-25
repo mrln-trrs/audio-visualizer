@@ -46,6 +46,17 @@ struct VisualizerConfig {
     // Dispositivo de audio seleccionado (vacío = predeterminado de Windows).
     std::string selected_device_name;
 
+    // Apariencia Fluent (docs/12). material: "none", "acrylic_app" (material propio del panel),
+    // "mica" o "acrylic_system" (material del sistema detrás de toda la ventana, Windows 11 22H2).
+    std::string material = "acrylic_app";
+    // Opacidad del tinte del material propio, en [0.6, 0.95]. Por debajo de 0.7 el contraste del
+    // texto puede bajar de 4,5:1.
+    float material_opacity = 0.75f;
+    // Transiciones con curvas de deceleración (apertura del panel, cambio de modo).
+    bool animations = true;
+    // Si Windows tiene desactivadas las transparencias o las animaciones, respetarlo.
+    bool respect_system_effects = true;
+
     // Sección "bandas": partición del espectro y dinámica por banda (docs/11, sección 4).
     BandConfig bands;
 };

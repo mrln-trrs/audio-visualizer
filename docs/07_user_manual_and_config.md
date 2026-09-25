@@ -178,9 +178,11 @@ Audio Visualizer 2.0  |  [Barras]  |  144 fps (144 Hz, vsync)  |  100 esp/s  |  
 
 ---
 
-## 6. Funciones Previstas en la Versión 3.0 (No Disponibles Todavía)
+## 6. Funciones de la Versión 3.0
 
-Esta sección documenta con antelación lo que la 3.0 añadiría a la experiencia de usuario, para que el diseño pueda revisarse antes de implementarse. Ninguna de estas opciones existe en el ejecutable actual.
+Estado por función: bandas, medidores, osciloscopio apilado y apariencia Fluent están disponibles; la sección `analisis` de la configuración y la resolución variable siguen previstas.
+
+La pestaña "Color y Apariencia" del panel controla el material, su opacidad, las animaciones y el respeto a las preferencias de Windows, y muestra el estado real de cada uno en el cuadro actual.
 
 ### 6.1 Bandas configurables (disponible desde la fase B)
 
@@ -218,10 +220,10 @@ La sección `"bandas"` está disponible desde la fase B (las claves marcadas com
 | `bandas` | `bars_inherit_dynamics` | booleano | true | Las barras del modo 1 usan el ataque y la caída de su banda |
 | `bandas` | `cuts_hz` | lista creciente | 60, 250, 500, 2000, 4000, 6000 | Cortes del modo manual |
 | `bandas` | `names`, `colors_rgb`, `gain`, `attack_ms`, `release_ms` | listas de longitud `cuts_hz + 1` | preset de siete bandas | Propiedades por banda |
-| `estilos` | `material` | `none`, `acrylic_app`, `mica`, `acrylic_system` | `acrylic_app` | Material del panel y de la ventana |
-| `estilos` | `material_opacity` | número en [0.6, 0.95] | 0.75 | Opacidad del tinte; por debajo de 0.7 el contraste puede bajar de 4,5:1 |
-| `estilos` | `animations` | booleano | true | Transiciones con curvas de aceleración |
-| `estilos` | `respect_system_effects` | booleano | true | Desactiva transparencias y animaciones si Windows las tiene desactivadas |
+| `estilos` | `material` | `none`, `acrylic_app`, `mica`, `acrylic_system` | `acrylic_app` | Material del panel y de la ventana (disponible). `mica` y `acrylic_system` requieren Windows 11 22H2 y reiniciar |
+| `estilos` | `material_opacity` | número en [0.6, 0.95] | 0.75 | Opacidad del tinte (disponible); por debajo de 0.7 el contraste puede bajar de 4,5:1 |
+| `estilos` | `animations` | booleano | true | Transiciones con curvas de deceleración: panel 200 ms, cambio de modo 150 ms (disponible) |
+| `estilos` | `respect_system_effects` | booleano | true | Desactiva transparencias y animaciones si Windows las tiene desactivadas (disponible) |
 
 ### 6.4 Lo que la 3.0 no hará
 

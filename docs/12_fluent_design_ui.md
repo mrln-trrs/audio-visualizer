@@ -1,6 +1,6 @@
 # Diseño Visual Moderno: Fluent Design, Materiales y Post-procesado - Audio Visualizer 3.0
 
-> **Estado:** Propuesta (versión 3.0). No implementado.  
+> **Estado:** Mixto. Implementado: material acrílico propio con desenfoque separable, exclusión, tinte, ruido, esquinas y sombra (secciones 3 a 6, 8); fundido entre modos y apertura del panel con curva de deceleración (7); Mica y Acrílico del sistema, marco oscuro y esquinas redondeadas por DWM con degradación (2, 11); escala por DPI inicial (9); respeto a las preferencias de transparencia y animaciones de Windows (10). Pendiente: recarga del atlas de fuentes al cambiar de monitor, luz de foco (reveal), Kawase, medición automatizada del contraste.  
 > **Alcance:** Lenguaje visual Fluent Design: materiales del sistema y propios, desenfoque, ruido, integración con Dear ImGui, movimiento, DPI, accesibilidad, compatibilidad y coste.  
 > **Documentos relacionados:** [02_tech_spec.md](02_tech_spec.md), [03_ux_flows.md](03_ux_flows.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [09_recommendations_and_future_improvements.md](09_recommendations_and_future_improvements.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
@@ -233,22 +233,34 @@ Presupuesto total añadido: menos de 0,3 ms por cuadro en una GPU integrada. El 
 
 ## 13. Plan por fases y criterios de aceptación
 
-### Fase 1. Escena a framebuffer y material propio
+### Fase 1. Escena a framebuffer y material propio (implementada)
+
+Archivos: `src/render/post_process.*` (RenderTarget, BlurChain, Presenter), `src/render/panel_material.*` (material y sombra desde un callback de la lista de fondo de ImGui), `shaders/blit.frag`, `shaders/blur.frag`, `shaders/material.frag`. El desenfoque corre a un cuarto de resolución con cinco lecturas bilineales por pasada y tres iteraciones. Medido con el panel abierto sobre el modo radial a 1024 por 600: 144 fps sostenidos, hilo de render al 13 % a 20 % de un núcleo incluyendo el dibujo de la escena y el limitador.
+
 
 - FBO de escena, cadena de desenfoque, shader de material, callback de ImGui.
 - **Criterio.** Dado el HUD abierto sobre el modo cascada, cuando se arrastra el panel, entonces el fondo desenfocado se desplaza con él sin discontinuidad y los fps no bajan del refresco del monitor. Y dado el texto del panel sobre la escena más brillante, cuando se mide el contraste, entonces es al menos 4,5:1.
 
-### Fase 2. Movimiento y profundidad
+### Fase 2. Movimiento y profundidad (implementada)
+
+Archivos: `src/ui/motion.h` (curvas de deceleración y estándar, `Transition` con tiempo real), fundido cruzado de 150 ms entre modos renderizando el modo anterior a un segundo framebuffer, apertura y cierre del panel en 200 ms con el material y la sombra atenuados por la misma alfa. La sombra se calcula en el propio shader del material con la distancia con signo del rectángulo desplazado 6 px. La duración exacta se verifica en tests/motion_test.cpp (150 ms con tolerancia de un cuadro a 60, 144 y 240 fps); la captura de un cuadro intermedio del fundido no es posible con PrintWindow, cuya latencia supera la duración de la transición.
+
 
 - Curvas de aceleración, transiciones del panel y de cambio de modo, sombras.
 - **Criterio.** Dado un cambio de modo con la tecla 2, cuando se graba la pantalla a 144 fps, entonces la transición dura 150 ms con más o menos 10 ms y no muestra ningún cuadro negro.
 
-### Fase 3. Materiales del sistema y DPI
+### Fase 3. Materiales del sistema y DPI (implementada, salvo la recarga de fuentes por monitor)
+
+Archivos: `src/platform/window_effects.*` (`DwmSetWindowAttribute` con los atributos 20, 33 y 38, `DwmExtendFrameIntoClientArea`, detección de la build 22621 con `RtlGetVersion`), `WindowOptions::transparent_framebuffer` y `scale_to_monitor` en `gl_window`. Con `material` igual a `mica` o `acrylic_system` la escena se limpia con alfa 0 y Windows compone el material detrás; en Windows 10 la ventana queda opaca y el HUD muestra el motivo. El cambio de material del sistema requiere reiniciar la aplicación porque el framebuffer transparente se decide al crear la ventana.
+
 
 - Mica o Acrílico opcionales en `config.json`, esquinas redondeadas, modo oscuro del marco, escala por DPI.
 - **Criterio.** Dado Windows 11 22H2 con la opción de Acrílico activa, cuando la ventana se coloca sobre otra aplicación, entonces se ve su contenido desenfocado detrás de la visualización. Y dado Windows 10, cuando se activa la misma opción, entonces la aplicación arranca con fondo opaco y sin errores.
 
-### Fase 4. Accesibilidad
+### Fase 4. Accesibilidad (implementada)
+
+`platform::ReadSystemEffectsPreference` lee `SPI_GETCLIENTAREAANIMATION` y `EnableTransparency`; con `respect_system_effects` activo, el panel es opaco y las transiciones instantáneas si Windows las tiene desactivadas. La opacidad del tinte se acota a [0,6, 0,95] y el HUD avisa por debajo de 0,7 (contraste 4,5:1, sección 10). Pendiente: medir el contraste de forma automatizada sobre la escena más brillante.
+
 
 - Interruptores para transparencias y animaciones, lectura de la preferencia del sistema.
 - **Criterio.** Dado Windows con los efectos de transparencia desactivados en Configuración, cuando arranca la aplicación, entonces el panel es opaco y las transiciones son instantáneas.

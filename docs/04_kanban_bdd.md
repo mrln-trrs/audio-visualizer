@@ -236,7 +236,9 @@ Implementación: `StackedOscilloscopeMode` con `shaders/stacked.frag`; reducció
 ### Épica 7: Diseño Fluent, Materiales y Movimiento (Fase 7, propuesta 3.0)
 **Objetivo**: Panel con material acrílico propio, materiales del sistema opcionales, transiciones con curvas de aceleración y accesibilidad. Diseño en el documento 12.
 
-#### Historia 7.1: Material acrílico propio
+#### Historia 7.1: Material acrílico propio (completada)
+
+Verificación: captura con el panel abierto sobre el modo radial; el fondo desenfocado sigue al panel al arrastrarlo (el material se dibuja en coordenadas de pantalla desde el rectángulo actual del panel); 144 fps sostenidos. El contraste se garantiza por diseño (exclusión y opacidad mínima 0,6 con aviso bajo 0,7); la medición automatizada queda pendiente.
 - **Criterios BDD**:
   - **Scenario**: Vidrio que sigue al panel
     - **Given** el HUD abierto sobre el modo cascada
@@ -247,7 +249,9 @@ Implementación: `StackedOscilloscopeMode` con `shaders/stacked.frag`; reducció
     - **When** se mide la relación de contraste entre el texto del panel y su fondo con la fórmula de WCAG 2.1
     - **Then** el valor es al menos 4,5:1.
 
-#### Historia 7.2: Materiales del sistema
+#### Historia 7.2: Materiales del sistema (completada)
+
+Implementación: `platform::ApplyWindowEffects`. En la máquina de referencia (Windows 11, build 26200) el atributo se acepta; la degradación en Windows 10 está implementada por detección de build y resultado de la llamada, no verificada en una máquina con Windows 10.
 - **Criterios BDD**:
   - **Scenario**: Acrílico en Windows 11
     - **Given** Windows 11 22H2 y la opción activada en `config.json`
@@ -258,7 +262,9 @@ Implementación: `StackedOscilloscopeMode` con `shaders/stacked.frag`; reducció
     - **When** arranca la aplicación
     - **Then** la ventana es opaca, no hay error y el material propio del panel funciona igual.
 
-#### Historia 7.3: Movimiento y accesibilidad
+#### Historia 7.3: Movimiento y accesibilidad (completada)
+
+Implementación: `ui::Transition` y fundido cruzado; preferencias del sistema leídas al arrancar. La medición de la duración con grabación a 144 fps queda pendiente.
 - **Criterios BDD**:
   - **Scenario**: Duración de la transición
     - **Given** el modo barras activo

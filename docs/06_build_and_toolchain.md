@@ -107,14 +107,14 @@ build/Release/ (o x64/Release/)
 
 ## 5.5 Pruebas Numéricas
 
-CMake define dos objetivos de prueba sin audio ni ventana: `band_metrics_test` (partición en bandas, métricas por banda y conservación de la energía) y `band_synthesis_test` (máscaras, reconstrucción por solapamiento y suma, y teorema de la suma de bandas):
+CMake define tres objetivos de prueba sin audio ni ventana: `band_metrics_test` (partición en bandas, métricas por banda y conservación de la energía), `band_synthesis_test` (máscaras, reconstrucción por solapamiento y suma, y teorema de la suma de bandas) y `motion_test` (curvas y duración de las transiciones de Fluent):
 
 ```powershell
-cmake --build build --config Release --target band_metrics_test band_synthesis_test
+cmake --build build --config Release --target band_metrics_test band_synthesis_test motion_test
 ctest --test-dir build -C Release --output-on-failure
 ```
 
-Los criterios y sus resultados están en el documento 11, fases B y C. Los objetivos de prueba no forman parte de la solución `.sln`.
+Los criterios y sus resultados están en el documento 11, fases B y C, y en el documento 12, fase 2. Los objetivos de prueba no forman parte de la solución `.sln`.
 
 ## 6. Empaquetado y Distribución
 
@@ -142,7 +142,7 @@ Para distribuir la aplicación a otro equipo con Windows:
 
 | Componente | Requisito | Motivo | Degradación si falta |
 |---|---|---|---|
-| Materiales del sistema (Mica, Acrílico) | Windows 11 22H2 (build 22621) o superior; enlazar `dwmapi.lib` | `DwmSetWindowAttribute` con el atributo 38 solo existe desde esa build (documento 12, sección 2) | Fondo opaco, sin error |
+| Materiales del sistema (Mica, Acrílico) | Windows 11 22H2 (build 22621) o superior; `dwmapi.lib` se enlaza por `#pragma comment` en `src/platform/window_effects.cpp` | `DwmSetWindowAttribute` con el atributo 38 solo existe desde esa build (documento 12, sección 2) | Fondo opaco, sin error; el HUD muestra el motivo |
 | Framebuffer transparente | Driver OpenGL con soporte de composición; `GLFW_TRANSPARENT_FRAMEBUFFER` | Necesario para ver el material del sistema a través de la ventana | Ventana opaca; el material propio del panel sigue funcionando |
 | Post-procesado | OpenGL 3.3 Core, sin cambios | FBO y texturas ya disponibles en 3.3 | No aplica |
 | Reconstrucción de bandas | FFTW ya incluida (`fftwf_plan_dft_c2r_1d`) | La IFFT usa la misma biblioteca | No aplica |

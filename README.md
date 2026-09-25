@@ -113,6 +113,7 @@ audio-visualizer/
 |-- docs/                           Documentación formal (PRD, Tech Spec, UX Flows, Kanban)
 |-- tests/band_metrics_test.cpp     Prueba numerica de bandas y Parseval (objetivo CMake)
 |-- tests/band_synthesis_test.cpp   Prueba numerica de la reconstruccion y la suma de bandas
+|-- tests/motion_test.cpp           Prueba de las curvas y duraciones de las transiciones
 |-- shaders/                        Shaders GLSL (Modern OpenGL 3.3 Core)
 |   |-- bars.vert / bars.frag       Shader para barras y marcadores de pico
 |   |-- quad.vert                   Vertex shader común para modos de pantalla completa
@@ -151,6 +152,8 @@ audio-visualizer/
 |   |   |-- bar_spectrum.*          Bins a barras, lineal o logaritmico, dB a [0, 1]
 |   |   |-- spectrum_dynamics.*     Ataque, caida y peak-hold por tiempo real
 |   |   |-- frame_limiter.*         Limitador adaptativo cuando el driver ignora vsync
+|   |   |-- post_process.*          Escena a textura, desenfoque separable, presentacion
+|   |   |-- panel_material.*        Material acrilico propio detras del panel (callback de ImGui)
 |   |   |-- renderer.*              Bucle principal de render
 |   |   `-- modes/                  Un modulo por modo visual (IVisualMode)
 |   |       |-- visual_mode.h       Interfaz y RenderContext
@@ -160,9 +163,13 @@ audio-visualizer/
 |   |       |-- waterfall_mode.*    4. Cascada
 |   |       |-- band_meters_mode.*  5. Medidores por banda (tecla 6)
 |   |       `-- stacked_oscilloscope_mode.*  6. Osciloscopio apilado (tecla 5)
+|   |-- platform/                   Windows: efectos DWM (Mica, Acrilico, marco oscuro) y preferencias
+|   |   `-- window_effects.*
 |   `-- ui/                         Dear ImGui
 |       |-- theme.*                 Estilo y HelpMarker
 |       |-- telemetry.*             Metricas y titulo de la ventana
+|       |-- motion.h                Curvas de deceleracion y transiciones por tiempo real
+|       |-- panel_material.h        Interfaz del material que usa el HUD
 |       `-- hud.*                   Panel de control por pestanas
 |
 |-- fftw-3.3.5-dll64/               FFTW 3.3.5 (DLL, headers y .lib x64)
@@ -242,7 +249,7 @@ La versión 2.0 reduce el análisis a un vector de alturas de barra. La 3.0 prop
 - **Osciloscopio apilado**, medidores por banda, dinámica de ataque y caída por banda, y detección de golpes por flujo espectral.
 - **Diseño Fluent.** Panel con material acrílico propio (desenfoque, tinte, exclusión, ruido), materiales Mica y Acrílico del sistema en Windows 11, transiciones con curvas de aceleración y contraste mínimo 4,5:1. Documento 12.
 
-Estado: fases A, B y C implementadas (trama de análisis con triple búfer; bandas configurables con métricas, dinámica por banda y medidores, tecla `6`; ondas por banda reconstruidas por IFFT enmascarada y osciloscopio apilado, tecla `5`). La fase D (resolución variable) y el diseño Fluent son documentación. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
+Estado: fases A, B y C implementadas (trama de análisis con triple búfer; bandas configurables con métricas, dinámica por banda y medidores, tecla `6`; ondas por banda reconstruidas por IFFT enmascarada y osciloscopio apilado, tecla `5`) y diseño Fluent implementado (material acrílico propio con desenfoque, Mica y Acrílico del sistema en Windows 11, transiciones y respeto a las preferencias de accesibilidad). Queda la fase D (resolución variable) como documentación. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
 
 ---
 

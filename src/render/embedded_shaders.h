@@ -194,4 +194,72 @@ void main() {
 }
 )";
 
+inline const char* const kBlitFrag = R"(#version 330 core
+in vec2 v_uv;
+out vec4 FragColor;
+uniform sampler2D u_tex;
+uniform float u_alpha;
+void main() {
+    vec4 c = texture(u_tex, v_uv);
+    FragColor = vec4(c.rgb, c.a * u_alpha);
+}
+)";
+
+inline const char* const kBlurFrag = R"(#version 330 core
+in vec2 v_uv;
+out vec4 FragColor;
+uniform sampler2D u_tex;
+uniform vec2 u_step;
+void main() {
+    const float w0 = 0.2270270270, w1 = 0.3162162162, w2 = 0.0702702703;
+    const float o1 = 1.3846153846, o2 = 3.2307692308;
+    vec4 c = texture(u_tex, v_uv) * w0;
+    c += texture(u_tex, v_uv + u_step * o1) * w1;
+    c += texture(u_tex, v_uv - u_step * o1) * w1;
+    c += texture(u_tex, v_uv + u_step * o2) * w2;
+    c += texture(u_tex, v_uv - u_step * o2) * w2;
+    FragColor = c;
+}
+)";
+
+inline const char* const kMaterialFrag = R"(#version 330 core
+in vec2 v_uv;
+out vec4 FragColor;
+uniform sampler2D u_blurred;
+uniform vec2 u_resolution;
+uniform vec4 u_rect;
+uniform float u_radius;
+uniform vec4 u_tint;
+uniform float u_exclusion;
+uniform float u_noise;
+uniform float u_shadow;
+uniform float u_alpha;
+float sdRoundRect(vec2 p, vec2 half_size, float r) {
+    vec2 q = abs(p) - half_size + r;
+    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+}
+float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+void main() {
+    vec2 p = gl_FragCoord.xy;
+    vec2 center = 0.5 * (u_rect.xy + u_rect.zw);
+    vec2 half_size = 0.5 * (u_rect.zw - u_rect.xy);
+    float d = sdRoundRect(p - center, half_size, u_radius);
+    if (d > 0.0) {
+        float ds = sdRoundRect(p - center + vec2(0.0, 6.0), half_size, u_radius);
+        float a = u_shadow * exp(-max(ds, 0.0) / 14.0);
+        if (ds > 40.0) discard;
+        FragColor = vec4(0.0, 0.0, 0.0, a);
+        return;
+    }
+    vec3 bg = texture(u_blurred, p / u_resolution).rgb;
+    vec3 gray = vec3(0.5);
+    vec3 excl = bg + gray - 2.0 * bg * gray;
+    bg = mix(bg, excl, u_exclusion);
+    vec3 col = mix(bg, u_tint.rgb, u_tint.a);
+    col += (hash(p) - 0.5) * 2.0 * u_noise;
+    float aa = 1.0 - smoothstep(-1.0, 0.0, d);
+    FragColor = vec4(col, aa * u_alpha);
+}
+)";
+
 } // namespace render::embedded

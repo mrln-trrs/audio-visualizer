@@ -121,7 +121,7 @@ stateDiagram-v2
 - **Feedback visual**: Las trazas del osciloscopio apilado se reordenan y recoloran en el siguiente cuadro. Si un corte deja una banda con menos de dos bins, la interfaz lo señala y muestra la latencia que haría falta para resolverla (documento 10, sección 5.3).
 - **Invariante**: Las bandas siempre particionan el rango; no es posible crear huecos ni solapes desde la interfaz.
 
-### Cambios en el estado de Interacción HUD
+### Cambios en el estado de Interacción HUD (implementados)
 
 - El panel adopta el material acrílico propio: desenfoque del fondo, tinte, exclusión y ruido (documento 12, sección 3). El fondo desenfocado se desplaza con el panel al arrastrarlo.
 - Apertura y cierre con curva de deceleración de 200 ms; cambio de modo con fundido cruzado de 150 ms (documento 12, sección 7).

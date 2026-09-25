@@ -60,6 +60,7 @@ set(PROJECT_SOURCES
     src/core/config.cpp
     src/core/types.cpp
     src/main.cpp
+    src/platform/window_effects.cpp
     src/render/band_waveform_texture.cpp
     src/render/bar_spectrum.cpp
     src/render/data_textures.cpp
@@ -72,6 +73,8 @@ set(PROJECT_SOURCES
     src/render/modes/stacked_oscilloscope_mode.cpp
     src/render/modes/waterfall_mode.cpp
     src/render/modes/waveform_mode.cpp
+    src/render/panel_material.cpp
+    src/render/post_process.cpp
     src/render/renderer.cpp
     src/render/shader_program.cpp
     src/render/spectrum_dynamics.cpp
@@ -94,6 +97,7 @@ set(PROJECT_SOURCES
     src/core/shared_state.h
     src/core/triple_buffer.h
     src/core/types.h
+    src/platform/window_effects.h
     src/render/band_waveform_texture.h
     src/render/bar_spectrum.h
     src/render/data_textures.h
@@ -108,10 +112,14 @@ set(PROJECT_SOURCES
     src/render/modes/visual_mode.h
     src/render/modes/waterfall_mode.h
     src/render/modes/waveform_mode.h
+    src/render/panel_material.h
+    src/render/post_process.h
     src/render/renderer.h
     src/render/shader_program.h
     src/render/spectrum_dynamics.h
     src/ui/hud.h
+    src/ui/motion.h
+    src/ui/panel_material.h
     src/ui/telemetry.h
     src/ui/theme.h
 )
@@ -188,6 +196,13 @@ endif()
 add_custom_command(TARGET band_synthesis_test POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${FFTW_DIR}/libfftw3f-3.dll" "$<TARGET_FILE_DIR:band_synthesis_test>/libfftw3f-3.dll")
 add_test(NAME band_synthesis COMMAND band_synthesis_test)
+
+add_executable(motion_test tests/motion_test.cpp)
+target_include_directories(motion_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+if(MSVC)
+    target_compile_options(motion_test PRIVATE /W4 /utf-8 /EHsc /permissive-)
+endif()
+add_test(NAME motion COMMAND motion_test)
 
 # -----------------------------------------------------------------------------
 # Post-build: DLL, shaders y config.json junto al ejecutable

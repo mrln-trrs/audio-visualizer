@@ -16,6 +16,9 @@
     <Filter Include="Fuentes\core">
       <UniqueIdentifier>{6c8e4924-274a-51ff-a8bc-f2c50965c365}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Fuentes\platform">
+      <UniqueIdentifier>{3f437353-54ce-5a92-a2af-673f02e0c4a5}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Fuentes\render">
       <UniqueIdentifier>{cd6da3ac-acf9-5f27-b730-c03f2f7a0ddd}</UniqueIdentifier>
     </Filter>
@@ -75,6 +78,9 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Fuentes</Filter>
     </ClCompile>
+    <ClCompile Include="src\platform\window_effects.cpp">
+      <Filter>Fuentes\platform</Filter>
+    </ClCompile>
     <ClCompile Include="src\render\band_waveform_texture.cpp">
       <Filter>Fuentes\render</Filter>
     </ClCompile>
@@ -110,6 +116,12 @@
     </ClCompile>
     <ClCompile Include="src\render\modes\waveform_mode.cpp">
       <Filter>Fuentes\render\modes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\panel_material.cpp">
+      <Filter>Fuentes\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\post_process.cpp">
+      <Filter>Fuentes\render</Filter>
     </ClCompile>
     <ClCompile Include="src\render\renderer.cpp">
       <Filter>Fuentes\render</Filter>
@@ -197,6 +209,9 @@
     <ClInclude Include="src\core\types.h">
       <Filter>Fuentes\core</Filter>
     </ClInclude>
+    <ClInclude Include="src\platform\window_effects.h">
+      <Filter>Fuentes\platform</Filter>
+    </ClInclude>
     <ClInclude Include="src\render\band_waveform_texture.h">
       <Filter>Fuentes\render</Filter>
     </ClInclude>
@@ -239,6 +254,12 @@
     <ClInclude Include="src\render\modes\waveform_mode.h">
       <Filter>Fuentes\render\modes</Filter>
     </ClInclude>
+    <ClInclude Include="src\render\panel_material.h">
+      <Filter>Fuentes\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\post_process.h">
+      <Filter>Fuentes\render</Filter>
+    </ClInclude>
     <ClInclude Include="src\render\renderer.h">
       <Filter>Fuentes\render</Filter>
     </ClInclude>
@@ -249,6 +270,12 @@
       <Filter>Fuentes\render</Filter>
     </ClInclude>
     <ClInclude Include="src\ui\hud.h">
+      <Filter>Fuentes\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\motion.h">
+      <Filter>Fuentes\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\panel_material.h">
       <Filter>Fuentes\ui</Filter>
     </ClInclude>
     <ClInclude Include="src\ui\telemetry.h">
@@ -282,6 +309,15 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\bars.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\blit.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\blur.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\material.frag">
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\quad.vert">

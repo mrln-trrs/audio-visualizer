@@ -14,12 +14,16 @@
 #include <backends/imgui_impl_opengl3.h>
 
 #include "core/band_layout.h"
+#include "platform/window_effects.h"
 #include "render/gl_window.h"
 #include "render/fullscreen_quad.h"
 #include "render/data_textures.h"
+#include "render/band_waveform_texture.h"
 #include "render/bar_spectrum.h"
 #include "render/spectrum_dynamics.h"
 #include "render/frame_limiter.h"
+#include "render/post_process.h"
+#include "render/panel_material.h"
 #include "render/modes/visual_mode.h"
 #include "render/modes/bars_mode.h"
 #include "render/modes/radial_mode.h"
@@ -27,13 +31,17 @@
 #include "render/modes/waterfall_mode.h"
 #include "render/modes/band_meters_mode.h"
 #include "render/modes/stacked_oscilloscope_mode.h"
-#include "render/band_waveform_texture.h"
 #include "ui/theme.h"
 #include "ui/telemetry.h"
 #include "ui/hud.h"
+#include "ui/motion.h"
 
 namespace render {
 namespace {
+
+// Duraciones de las transiciones (docs/12, sección 7).
+constexpr double kHudFadeSeconds = 0.20;
+constexpr double kModeCrossfadeSeconds = 0.15;
 
 // Atajos de teclado: Tab o H alternan el HUD; 1 a 6 cambian de modo.
 class KeyboardShortcuts {
@@ -64,7 +72,6 @@ private:
 // análisis para que ambas coincidan bin a bin.
 class BandLayoutMirror {
 public:
-    // Devuelve true si la partición cambió.
     bool Refresh(const core::VisualizerConfig& cfg, int sample_rate) {
         core::BandConfig bands = cfg.bands;
         core::ValidateBandConfig(bands, cfg.attack_ms, cfg.release_ms);
@@ -83,7 +90,6 @@ public:
         }
         return false;
     }
-
     const core::BandLayout& layout() const { return layout_; }
     uint64_t version() const { return version_; }
     const std::vector<float>& attack_ms() const { return attack_; }
@@ -97,7 +103,6 @@ private:
     std::vector<float> release_;
 };
 
-// Nivel por banda en [0, 1]: pico de la banda en dB más su ganancia, sobre el rango dinámico.
 void BandLevels(const core::AnalysisFrame& frame, const core::BandLayout& layout, const core::VisualizerConfig& cfg, std::vector<float>& out) {
     const int count = std::min(frame.band_count(), layout.count());
     out.resize(count);
@@ -106,6 +111,12 @@ void BandLevels(const core::AnalysisFrame& frame, const core::BandLayout& layout
         const float gain_db = 20.0f * std::log10(std::max(1e-6f, layout.bands[b].gain));
         out[b] = std::clamp((frame.band_peak_db[b] + gain_db + range_db) / range_db, 0.0f, 1.0f);
     }
+}
+
+platform::SystemBackdrop BackdropFor(const std::string& material) {
+    if (material == "mica") return platform::SystemBackdrop::Mica;
+    if (material == "acrylic_system") return platform::SystemBackdrop::Acrylic;
+    return platform::SystemBackdrop::None;
 }
 
 } // namespace
@@ -119,20 +130,36 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
         cfg = shared_config.config;
     }
 
+    // Preferencias del sistema (docs/12, secciones 10 y 11). Se leen al arrancar.
+    const platform::SystemEffectsPreference system_pref = platform::ReadSystemEffectsPreference();
+    const platform::SystemBackdrop backdrop = BackdropFor(cfg.material);
+
     if (!glfwInit()) {
         std::cerr << "Render: no se pudo inicializar GLFW." << std::endl;
         return;
     }
-    GLFWwindow* window = CreateMainWindow(1024, 600, "Audio Visualizer 3.0", cfg.vsync);
+    WindowOptions options;
+    options.title = "Audio Visualizer 3.0";
+    options.vsync = cfg.vsync;
+    options.transparent_framebuffer = (backdrop != platform::SystemBackdrop::None);
+    GLFWwindow* window = CreateMainWindow(options);
     if (!window) {
         glfwTerminate();
         return;
     }
+    const platform::WindowEffectsResult effects = platform::ApplyWindowEffects(window, backdrop);
+    if (!effects.message.empty()) std::cout << "Render: " << effects.message << std::endl;
+    const bool system_backdrop_active = effects.backdrop && glfwGetWindowAttrib(window, GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE;
 
     // Dear ImGui.
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    {
+        float sx = 1.0f, sy = 1.0f;
+        glfwGetWindowContentScale(window, &sx, &sy);
+        ImGui::GetIO().FontGlobalScale = std::max(1.0f, sx);
+    }
     ui::ApplyObsidianTheme();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
@@ -149,6 +176,15 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
     std::vector<float> band_levels;
     BandWaveformTexture band_waves;
     band_waves.Init();
+
+    // Post-procesado: escena a textura, fundido entre modos y material del panel (docs/12).
+    RenderTarget scene, scene_previous;
+    scene.Init(1024, 600);
+    scene_previous.Init(1024, 600);
+    Presenter presenter;
+    presenter.Init();
+    PanelMaterial panel_material;
+    panel_material.Init();
 
     std::array<std::unique_ptr<IVisualMode>, core::MODE_COUNT> modes;
     modes[core::MODE_BARS] = std::make_unique<BarsMode>();
@@ -167,9 +203,19 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
     int title_frames = 0;
     double last_time = glfwGetTime();
     double title_time = last_time;
+    int current_mode = std::clamp(cfg.visual_mode, 0, static_cast<int>(core::MODE_COUNT) - 1);
+    int previous_mode = current_mode;
+    double mode_change_time = -1e9;
 
     ui::HudState hud;
     ui::Telemetry telemetry;
+    ui::Transition hud_fade;
+    ui::AppearanceStatus appearance;
+    appearance.system_transparency = system_pref.transparency;
+    appearance.system_animations = system_pref.animations;
+    appearance.system_backdrop_active = system_backdrop_active;
+    appearance.system_backdrop_supported = platform::SupportsSystemBackdrop();
+    appearance.effects_message = effects.message;
     KeyboardShortcuts keys;
     FrameLimiter limiter;
     telemetry.monitor_hz = RefreshRateForWindow(window);
@@ -179,15 +225,32 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
         glfwPollEvents();
 
         const double now = glfwGetTime();
-        // dt real del cuadro, acotado para que un tirón no dispare la animación.
         const float dt = static_cast<float>(std::clamp(now - last_time, 0.0, 0.1));
         last_time = now;
 
         keys.Poll(window, hud, cfg);
 
-        // Pedir al análisis las ondas por banda solo mientras un modo que las usa está activo.
+        // Efectos permitidos este cuadro: configuración y, si se respeta, preferencia del sistema.
+        const bool effects_allowed = cfg.material == "acrylic_app" && (!cfg.respect_system_effects || system_pref.transparency);
+        const bool animations_allowed = cfg.animations && (!cfg.respect_system_effects || system_pref.animations);
+        appearance.effects_active = effects_allowed;
+        appearance.animations_active = animations_allowed;
+        hud_fade.Configure(kHudFadeSeconds, animations_allowed);
+        hud_fade.SetTarget(hud.visible, now);
+        const float hud_alpha = hud_fade.value(now);
+
+        // Cambio de modo con fundido cruzado.
         const int mode_index = std::clamp(cfg.visual_mode, 0, static_cast<int>(core::MODE_COUNT) - 1);
-        vis.band_waveforms_requested.store(modes[mode_index]->NeedsBandWaveforms(), std::memory_order_relaxed);
+        if (mode_index != current_mode) {
+            previous_mode = current_mode;
+            current_mode = mode_index;
+            mode_change_time = animations_allowed ? now : -1e9;
+        }
+        const float crossfade_t = static_cast<float>(std::clamp((now - mode_change_time) / kModeCrossfadeSeconds, 0.0, 1.0));
+        const bool crossfading = crossfade_t < 1.0f && previous_mode != current_mode;
+
+        // Pedir al análisis las ondas por banda solo mientras un modo que las usa está activo.
+        vis.band_waveforms_requested.store(modes[current_mode]->NeedsBandWaveforms() || (crossfading && modes[previous_mode]->NeedsBandWaveforms()), std::memory_order_relaxed);
 
         // Última trama de análisis, sin bloqueo ni copia.
         const core::AnalysisFrame& frame = vis.analysis.Read();
@@ -196,14 +259,12 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
 
         int fbw = 0, fbh = 0;
         glfwGetFramebufferSize(window, &fbw, &fbh);
-        // Una barra por píxel de ancho.
-        const int num_bars = std::max(1, fbw);
+        fbw = std::max(1, fbw);
+        fbh = std::max(1, fbh);
+        const int num_bars = fbw;
 
-        // Partición en bandas (sigue a la configuración en vivo y a la frecuencia de muestreo).
         if (frame.valid()) bands.Refresh(cfg, frame.sample_rate);
 
-        // Espectro por barra (mapeo de bins a píxeles) y su animación temporal. Las barras heredan
-        // el ataque y la caída de su banda si la configuración lo pide.
         const core::BandLayout* bars_layout = cfg.bands.bars_inherit_dynamics ? &bands.layout() : nullptr;
         if (has_new_frame || static_cast<int>(bar_spectrum.values().size()) != num_bars) {
             bar_spectrum.Update(frame, num_bars, cfg, bars_layout, bands.version());
@@ -213,7 +274,6 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
                         per_bar ? bar_spectrum.attack_ms().data() : nullptr,
                         per_bar ? bar_spectrum.release_ms().data() : nullptr, dt);
 
-        // Niveles por banda con su propia dinámica.
         if (frame.valid()) BandLevels(frame, bands.layout(), cfg, band_levels);
         const int band_count = static_cast<int>(band_levels.size());
         const bool per_band = static_cast<int>(bands.attack_ms().size()) == band_count && band_count > 0;
@@ -221,8 +281,6 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
                              per_band ? bands.attack_ms().data() : nullptr,
                              per_band ? bands.release_ms().data() : nullptr, dt);
 
-        // Texturas: las alturas animadas se suben cada cuadro para que el modo radial se mueva a
-        // la tasa del monitor; la onda y la fila del espectrograma solo cuando hay trama nueva.
         textures.UploadSpectrum(dynamics.heights());
         if (has_new_frame) {
             textures.UploadWaveform(frame.mix_waveform);
@@ -230,21 +288,62 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
             if (frame.band_waveform_valid) band_waves.Append(frame);
         }
 
-        glViewport(0, 0, fbw, fbh);
-        glClearColor(0.06f, 0.06f, 0.08f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
+        // Escena a textura. Con material del sistema el fondo queda transparente (alfa 0) para que
+        // Windows componga Mica o Acrílico detrás; si no, opaco.
+        const float bg_alpha = system_backdrop_active ? 0.0f : 1.0f;
         const RenderContext ctx{ fbw, fbh, now, num_bars, cfg, textures, dynamics, quad, bands.layout(), band_dynamics, band_waves };
-        modes[mode_index]->Render(ctx);
+        scene.Resize(fbw, fbh);
+        scene.Bind();
+        glDisable(GL_BLEND);
+        glClearColor(0.06f, 0.06f, 0.08f, bg_alpha);
+        glClear(GL_COLOR_BUFFER_BIT);
+        modes[current_mode]->Render(ctx);
+        if (crossfading) {
+            scene_previous.Resize(fbw, fbh);
+            scene_previous.Bind();
+            glClearColor(0.06f, 0.06f, 0.08f, bg_alpha);
+            glClear(GL_COLOR_BUFFER_BIT);
+            modes[previous_mode]->Render(ctx);
+        }
+
+        // Presentación en pantalla.
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, fbw, fbh);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glEnable(GL_BLEND);
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        if (crossfading) {
+            presenter.Draw(scene_previous.texture(), 1.0f, quad);
+            presenter.Draw(scene.texture(), ui::EaseDecelerate(crossfade_t), quad);
+        }
+        else {
+            presenter.Draw(scene.texture(), 1.0f, quad);
+        }
+
+        // Material del panel: solo si el panel está visible o desvaneciéndose.
+        const bool panel_showing = hud.visible || hud_alpha > 0.001f;
+        if (panel_showing && effects_allowed) {
+            MaterialParams params;
+            params.opacity = std::clamp(cfg.material_opacity, 0.6f, 0.95f);
+            panel_material.set_params(params);
+            panel_material.Prepare(scene.texture(), fbw, fbh, quad);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, fbw, fbh);
+        }
+        else {
+            panel_material.Skip();
+        }
 
         // Interfaz.
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        modes[mode_index]->DrawOverlay(ctx);
+        modes[current_mode]->DrawOverlay(ctx);
         telemetry.num_bars = num_bars;
         telemetry.limiter_active = limiter.active();
-        ui::HudContext hud_ctx{ cfg, shared_config, vis, audio, telemetry, frame, bands.layout(), now };
+        ui::HudContext hud_ctx{ cfg, shared_config, vis, audio, telemetry, frame, bands.layout(), appearance,
+                                panel_material.ready() ? &panel_material : nullptr, hud_alpha, now };
         ui::DrawHud(hud, hud_ctx);
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -262,7 +361,7 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
             telemetry.monitor_hz = RefreshRateForWindow(window);
             limiter.UpdateEverySecond(fps, telemetry.monitor_hz, cfg.max_fps, glfwGetTime());
             telemetry.limiter_active = limiter.active();
-            glfwSetWindowTitle(window, ui::BuildWindowTitle(modes[mode_index]->Name(), telemetry, audio.sample_rate.load()).c_str());
+            glfwSetWindowTitle(window, ui::BuildWindowTitle(modes[current_mode]->Name(), telemetry, audio.sample_rate.load()).c_str());
             title_frames = 0;
             title_time = now;
             title_sequence = seen_sequence;
@@ -275,6 +374,10 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
     for (auto& mode : modes) mode->Shutdown();
+    panel_material.Shutdown();
+    presenter.Shutdown();
+    scene_previous.Shutdown();
+    scene.Shutdown();
     band_waves.Shutdown();
     textures.Shutdown();
     quad.Shutdown();

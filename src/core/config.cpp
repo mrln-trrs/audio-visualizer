@@ -128,6 +128,19 @@ void LoadConfig(SharedConfigData& shared, const std::string& filename) {
         Read(estilos, "selected_device_name", c.selected_device_name);
         ReadColor(estilos, "base_color_rgb", c.base_color_rgb);
         ReadColor(estilos, "peak_color_rgb", c.peak_color_rgb);
+        Read(estilos, "material", c.material);
+        Read(estilos, "material_opacity", c.material_opacity);
+        Read(estilos, "animations", c.animations);
+        Read(estilos, "respect_system_effects", c.respect_system_effects);
+    }
+
+    if (c.material != "none" && c.material != "acrylic_app" && c.material != "mica" && c.material != "acrylic_system") {
+        std::cerr << "Config: material debe ser none, acrylic_app, mica o acrylic_system; se usa acrylic_app." << std::endl;
+        c.material = "acrylic_app";
+    }
+    if (c.material_opacity < 0.6f || c.material_opacity > 0.95f) {
+        std::cerr << "Config: material_opacity fuera de [0.6, 0.95], se acota." << std::endl;
+        c.material_opacity = c.material_opacity < 0.6f ? 0.6f : 0.95f;
     }
 
     if (c.frequency_scale != "linear" && c.frequency_scale != "log") {
@@ -170,7 +183,11 @@ bool SaveConfig(SharedConfigData& shared, const std::string& filename) {
         { "peak_hold_time_ms", c.peak_hold_time_ms },
         { "peak_decay_speed", c.peak_decay_speed },
         { "peak_color_rgb", c.peak_color_rgb },
-        { "selected_device_name", c.selected_device_name }
+        { "selected_device_name", c.selected_device_name },
+        { "material", c.material },
+        { "material_opacity", c.material_opacity },
+        { "animations", c.animations },
+        { "respect_system_effects", c.respect_system_effects }
     };
     j["bandas"] = BandsToJson(c.bands);
 

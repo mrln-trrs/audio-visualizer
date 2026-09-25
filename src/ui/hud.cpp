@@ -269,8 +269,36 @@ void TabBands(HudState& state, HudContext& ctx) {
 }
 
 // ---------------------------------------------------------------- Colores
-void TabColors(HudContext& ctx) {
+void TabAppearance(HudState& state, HudContext& ctx) {
     core::VisualizerConfig& cfg = ctx.cfg;
+    const AppearanceStatus& ap = ctx.appearance;
+    ImGui::Spacing();
+    ImGui::TextColored(kAccent, "Material del Panel y de la Ventana (Fluent):");
+    static const char* kMaterials[] = { "none", "acrylic_app", "mica", "acrylic_system" };
+    static const char* kMaterialLabels[] = { "Opaco", "Acrilico propio (panel desenfoca la escena)", "Mica del sistema (Windows 11)", "Acrilico del sistema (Windows 11)" };
+    int mat_idx = 1;
+    for (int i = 0; i < 4; ++i) if (cfg.material == kMaterials[i]) mat_idx = i;
+    if (ImGui::Combo("Material", &mat_idx, kMaterialLabels, 4)) {
+        cfg.material = kMaterials[mat_idx];
+        if (mat_idx >= 2) state.Toast("Los materiales del sistema se aplican al reiniciar la aplicacion", ctx.now);
+    }
+    ImGui::SameLine(); HelpMarker("Acrilico propio: el panel muestra la visualizacion desenfocada detras, con tinte, exclusion y ruido. Mica y Acrilico del sistema los compone Windows 11 detras de toda la ventana y requieren reiniciar.");
+    ImGui::SliderFloat("Opacidad del tinte", &cfg.material_opacity, 0.6f, 0.95f, "%.2f");
+    ImGui::SameLine(); HelpMarker("Por debajo de 0,70 el contraste del texto puede bajar de 4,5:1 (WCAG 2.1).");
+    if (cfg.material_opacity < 0.7f) ImGui::TextColored(kWarn, "Opacidad baja: el contraste del texto puede no cumplir 4,5:1.");
+
+    ImGui::Checkbox("Animaciones (apertura del panel, cambio de modo)", &cfg.animations);
+    ImGui::Checkbox("Respetar las preferencias de efectos de Windows", &cfg.respect_system_effects);
+    ImGui::SameLine(); HelpMarker("Si Windows tiene desactivadas las transparencias o las animaciones, el panel se vuelve opaco y las transiciones instantaneas.");
+
+    ImGui::TextDisabled("Windows: transparencias %s, animaciones %s. Este cuadro: material %s, animaciones %s.",
+        ap.system_transparency ? "activadas" : "desactivadas", ap.system_animations ? "activadas" : "desactivadas",
+        ap.effects_active ? "activo" : "inactivo", ap.animations_active ? "activas" : "inactivas");
+    if (!ap.effects_message.empty()) ImGui::TextColored(kWarn, "%s", ap.effects_message.c_str());
+    else if (ap.system_backdrop_active) ImGui::TextColored(kOk, "Material del sistema activo detras de la ventana.");
+    else if (!ap.system_backdrop_supported) ImGui::TextDisabled("Los materiales del sistema requieren Windows 11 22H2 o superior.");
+
+    ImGui::Separator();
     ImGui::Spacing();
     ImGui::TextColored(kAccent, "Colores Personalizados:");
     if (cfg.base_color_rgb.size() >= 3) {
@@ -377,12 +405,26 @@ void TabTelemetry(HudState& state, HudContext& ctx) {
 } // namespace
 
 void DrawHud(HudState& state, HudContext& ctx) {
-    if (!state.visible) return;
+    // Se sigue dibujando mientras se desvanece al cerrar.
+    if (!state.visible && ctx.panel_alpha <= 0.001f) return;
+    const float alpha = std::clamp(ctx.panel_alpha, 0.0f, 1.0f);
 
     ImGui::SetNextWindowPos(ImVec2(24, 24), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(560, 640), ImGuiCond_FirstUseEver);
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
+    // Con material, el fondo lo pinta el callback del render; el color de ImGui se anula.
+    const bool with_material = ctx.material != nullptr;
+    if (with_material) ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0, 0, 0, 0));
 
-    if (ImGui::Begin("Audio Visualizer 3.0  -  Panel de Control", &state.visible, ImGuiWindowFlags_NoCollapse)) {
+    bool keep_open = state.visible;
+    if (ImGui::Begin("Audio Visualizer 3.0  -  Panel de Control", &keep_open, ImGuiWindowFlags_NoCollapse)) {
+        if (with_material) {
+            // En la lista de fondo, que se dibuja antes que cualquier ventana: así el material queda
+            // debajo de la barra de título y de los controles del panel, no encima.
+            const ImVec2 pos = ImGui::GetWindowPos();
+            const ImVec2 size = ImGui::GetWindowSize();
+            ctx.material->AddPanelBackground(ImGui::GetBackgroundDrawList(), pos.x, pos.y, size.x, size.y, ImGui::GetStyle().WindowRounding, alpha);
+        }
         ImGui::TextColored(kAccent, "ESTADO:");
         ImGui::SameLine();
         ImGui::Text("%s", core::VisualizerModeName(ctx.cfg.visual_mode));
@@ -394,15 +436,18 @@ void DrawHud(HudState& state, HudContext& ctx) {
             if (ImGui::BeginTabItem(" Modos ")) { TabModes(ctx); ImGui::EndTabItem(); }
             if (ImGui::BeginTabItem(" DSP y Audio ")) { TabDsp(state, ctx); ImGui::EndTabItem(); }
             if (ImGui::BeginTabItem(" Bandas ")) { TabBands(state, ctx); ImGui::EndTabItem(); }
-            if (ImGui::BeginTabItem(" Color ")) { TabColors(ctx); ImGui::EndTabItem(); }
+            if (ImGui::BeginTabItem(" Color y Apariencia ")) { TabAppearance(state, ctx); ImGui::EndTabItem(); }
             if (ImGui::BeginTabItem(" Telemetria ")) { TabTelemetry(state, ctx); ImGui::EndTabItem(); }
             ImGui::EndTabBar();
         }
     }
     ImGui::End();
+    if (with_material) ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
+    if (state.visible && !keep_open) state.visible = false; // cerrado con la X
 
     // Publicar los cambios en vivo al hilo de análisis.
-    PublishConfig(ctx);
+    if (state.visible) PublishConfig(ctx);
 }
 
 } // namespace ui

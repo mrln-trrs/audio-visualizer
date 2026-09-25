@@ -182,7 +182,8 @@ flowchart TD
 | `core` | Constantes, tipos, estado compartido, configuración | nlohmann/json (solo `config.cpp`) |
 | `audio` | Loopback WASAPI, formato de muestra, enumeración, sesión y reintentos | Windows COM, WASAPI, avrt, winmm |
 | `analysis` | Ventana, FFT, magnitud, dB, mapeo a barras, publicación | FFTW (`fftwf_*`) |
-| `render` | Ventana y contexto, shaders, texturas, dinámica, limitador, modos | GLFW, GLEW, OpenGL 3.3 |
+| `render` | Ventana y contexto, shaders, texturas, dinámica, limitador, post-procesado y material, modos | GLFW, GLEW, OpenGL 3.3 |
+| `platform` | Efectos de ventana de Windows (DWM) y preferencias de accesibilidad del sistema | dwmapi, advapi32 |
 | `ui` | Panel, tema, telemetría | Dear ImGui |
 | `app` | Arranque de hilos y cierre ordenado | Windows (`FreeConsole`) |
 
@@ -209,7 +210,7 @@ Límites que la especificación asume explícitamente:
 - Resolución y latencia están ligadas por $\sigma_t \sigma_f \geq 1/(4\pi)$ (documento 10, sección 5). No existe "ver cada frecuencia" en tiempo real; se ofrece resolución variable por rango como compromiso (sección 7 del mismo documento).
 - El volumen de datos se acota conservando la STFT compleja (1,5 MB/s) y reconstruyendo solo las bandas visibles (documento 10, sección 6.3).
 
-## 8. Pipeline de Post-procesado y Materiales (Propuesta 3.0)
+## 8. Pipeline de Post-procesado y Materiales (Implementado en la 3.0)
 
 Resumen del diseño de [12_fluent_design_ui.md](12_fluent_design_ui.md).
 

@@ -16,7 +16,11 @@
     "release_ms": 160.0,
     "selected_device_name": "",
     "visual_mode": 0,
-    "vsync": true
+    "vsync": true,
+    "material": "acrylic_app",
+    "material_opacity": 0.75,
+    "animations": true,
+    "respect_system_effects": true
   },
   "bandas": {
     "mode": "manual",
