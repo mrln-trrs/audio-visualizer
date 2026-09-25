@@ -12,6 +12,20 @@
 // Referencia de cada clave: docs/07_user_manual_and_config.md, secciones 4 y 6.3.
 namespace core {
 
+// Sección "analisis": resolución variable por rangos (docs/10, sección 7; docs/11, fase D).
+// La FFT base de FFT_SIZE muestras se mantiene siempre. Si multi_resolution está activo se
+// calculan además una FFT larga para los graves (más resolución en frecuencia, más latencia) y
+// una corta para los agudos (menos latencia), y las barras toman cada rango de su fuente.
+struct AnalysisConfig {
+    bool multi_resolution = false;
+    int low_band_fft_size = 8192;     // potencia de dos, entre FFT_SIZE y MAX_LOW_BAND_FFT_SIZE
+    float low_band_max_hz = 250.0f;   // por debajo, las barras usan la FFT larga
+    int high_band_fft_size = 512;     // potencia de dos, entre 256 y FFT_SIZE
+    float high_band_min_hz = 2000.0f; // por encima, las barras usan la FFT corta
+};
+bool operator==(const AnalysisConfig& a, const AnalysisConfig& b);
+inline bool operator!=(const AnalysisConfig& a, const AnalysisConfig& b) { return !(a == b); }
+
 struct VisualizerConfig {
     // Sección "estilos".
     // Tiempo de respuesta al subir (ms). Bajo = ataque inmediato.
@@ -59,7 +73,13 @@ struct VisualizerConfig {
 
     // Sección "bandas": partición del espectro y dinámica por banda (docs/11, sección 4).
     BandConfig bands;
+
+    // Sección "analisis": resolución variable (docs/11, fase D).
+    AnalysisConfig analysis;
 };
+
+// Normaliza la sección de análisis (potencias de dos, rangos). Devuelve avisos.
+std::vector<std::string> ValidateAnalysisConfig(AnalysisConfig& cfg);
 
 bool operator==(const BandConfig& a, const BandConfig& b);
 inline bool operator!=(const BandConfig& a, const BandConfig& b) { return !(a == b); }

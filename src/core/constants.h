@@ -16,10 +16,13 @@ constexpr int FFT_SIZE = 2048;
 // de audio de Windows entrega paquetes cada ~10 ms, así que se obtienen ~100 espectros/s.
 constexpr int HOP_SIZE = 256;
 
-// Búfer circular de captura. Potencia de dos para indexar con máscara.
-constexpr int RING_SIZE = FFT_SIZE * 4;
+// Búfer circular de captura. Potencia de dos para indexar con máscara. Debe contener la ventana
+// más larga que se analice (resolución variable, docs/10 sección 7.4: hasta 16384 muestras).
+constexpr int MAX_LOW_BAND_FFT_SIZE = 16384;
+constexpr int RING_SIZE = FFT_SIZE * 8;
 constexpr uint64_t RING_MASK = RING_SIZE - 1;
 static_assert((RING_SIZE & (RING_SIZE - 1)) == 0, "RING_SIZE debe ser potencia de dos");
+static_assert(RING_SIZE >= MAX_LOW_BAND_FFT_SIZE, "el anillo debe contener la ventana larga de graves");
 static_assert(FFT_SIZE % HOP_SIZE == 0 && FFT_SIZE / HOP_SIZE >= 4,
               "FFT_SIZE / HOP_SIZE debe ser entero y al menos 4 (condicion de solapamiento constante)");
 

@@ -180,7 +180,7 @@ Audio Visualizer 2.0  |  [Barras]  |  144 fps (144 Hz, vsync)  |  100 esp/s  |  
 
 ## 6. Funciones de la Versión 3.0
 
-Estado por función: bandas, medidores, osciloscopio apilado y apariencia Fluent están disponibles; la sección `analisis` de la configuración y la resolución variable siguen previstas.
+Estado por función: bandas, medidores, osciloscopio apilado, apariencia Fluent y resolución variable están disponibles. La resolución variable viene desactivada y se activa en la pestaña "DSP y Audio", que muestra la latencia que añade en graves y la que ahorra en agudos.
 
 La pestaña "Color y Apariencia" del panel controla el material, su opacidad, las animaciones y el respeto a las preferencias de Windows, y muestra el estado real de cada uno en el cuadro actual.
 
@@ -209,10 +209,12 @@ La sección `"bandas"` está disponible desde la fase B (las claves marcadas com
 
 | Sección | Clave | Tipo | Defecto | Significado |
 |---|---|---|---|---|
-| `analisis` (previsto) | `fft_size` | entero, potencia de dos | 2048 | Tamaño de la ventana. Más grande, más resolución en graves y más latencia |
-| `analisis` | `hop_size` | entero | 256 | Avance entre análisis. Debe dividir a `fft_size` con cociente al menos 4 |
-| `analisis` | `history_frames` | entero | 512 | Tramas conservadas para espectrogramas y estelas |
-| `analisis` | `mask_ramp_bins` | número | 1.5 | Suavidad del borde entre bandas contiguas |
+| `analisis` | `multi_resolution` | booleano | false | Resolución variable: FFT larga en graves y corta en agudos. Desactivada por defecto porque añade latencia en graves |
+| `analisis` | `low_band_fft_size` | potencia de dos entre 2048 y 16384 | 8192 | Ventana de graves. 8192 a 48 kHz: 5,86 Hz por bin y 64 ms más de latencia |
+| `analisis` | `low_band_max_hz` | número | 250 | Hasta esta frecuencia las barras leen de la FFT larga |
+| `analisis` | `high_band_fft_size` | potencia de dos entre 256 y 2048 | 512 | Ventana de agudos. 512 a 48 kHz: 16 ms menos de latencia |
+| `analisis` | `high_band_min_hz` | número | 2000 | Desde esta frecuencia las barras leen de la FFT corta |
+| `bandas` | `mask_ramp_bins` | número | 1.5 | Suavidad del borde entre bandas contiguas (ondas por banda) |
 | `bandas` | `mode` | `octaves`, `linear`, `manual`, `per_bin` | `manual` | Modo de partición |
 | `bandas` | `f_min`, `f_max` | número | 20, 20000 | Rango cubierto; fuera queda la banda implícita "resto" |
 | `bandas` | `divisions_per_octave` | entero | 1 | Modo `octaves` |
@@ -228,4 +230,4 @@ La sección `"bandas"` está disponible desde la fase B (las claves marcadas com
 ### 6.4 Lo que la 3.0 no hará
 
 - No separará instrumentos ni voces. Separar por frecuencia no es separar por fuente (documento 10, sección 10).
-- No mostrará "cada frecuencia" con resolución de 1 Hz en tiempo real. Exigiría ventanas de un segundo y medio segundo de retraso (documento 10, sección 5.3).
+- No muestra "cada frecuencia" con resolución de 1 Hz en tiempo real. Exigiría ventanas de un segundo y medio segundo de retraso (documento 10, sección 5.3). La resolución variable llega hasta 16384 muestras (2,9 Hz por bin, 150 ms de latencia añadida) y es el máximo que la aplicación ofrece.

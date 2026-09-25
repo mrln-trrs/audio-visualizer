@@ -244,6 +244,10 @@ Los graves ganan resolución de semitono a cambio de un retraso de dos décimas 
 
 La CQT exacta requiere una FFT por bin. La aproximación habitual en tiempo real es una pirámide de tres o cuatro resoluciones: FFT de 8192 para el rango de 20 a 250 Hz, de 2048 para 250 a 2000 Hz y de 512 por encima. Cada rango toma su espectro de la FFT que le da una resolución cercana a la Q deseada. El coste es el de tres FFT en lugar de una, todavía marginal. La reconstrucción de bandas de la sección 4 sigue siendo válida dentro de cada resolución.
 
+### 7.5 Confirmación empírica en el proyecto
+
+`tests/resolution_test.cpp` (fase D) implementa la pirámide de 7.4 con FFT de 8192 y 512 junto a la base de 2048. Dos tonos de 40 y 55 Hz aparecen como dos picos con 8192 y como uno solo con 2048; dos tonos de 40 y 42,5 Hz no se separan ni con 8192, exactamente como predice la tabla de 5.3. La latencia añadida al centro de la ventana larga es de 64 ms y la ahorrada en agudos de 16 ms. Con la opción activa la interfaz muestra ambas cifras.
+
 ## 8. Alternativa: bancos de filtros en el dominio del tiempo
 
 ### 8.1 Planteamiento

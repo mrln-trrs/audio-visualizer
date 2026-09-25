@@ -44,5 +44,12 @@
     ],
     "mask_ramp_bins": 1.5,
     "bars_inherit_dynamics": true
+  },
+  "analisis": {
+    "multi_resolution": false,
+    "low_band_fft_size": 8192,
+    "low_band_max_hz": 250.0,
+    "high_band_fft_size": 512,
+    "high_band_min_hz": 2000.0
   }
 }

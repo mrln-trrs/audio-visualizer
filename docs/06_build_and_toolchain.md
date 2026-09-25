@@ -107,14 +107,14 @@ build/Release/ (o x64/Release/)
 
 ## 5.5 Pruebas Numéricas
 
-CMake define tres objetivos de prueba sin audio ni ventana: `band_metrics_test` (partición en bandas, métricas por banda y conservación de la energía), `band_synthesis_test` (máscaras, reconstrucción por solapamiento y suma, y teorema de la suma de bandas) y `motion_test` (curvas y duración de las transiciones de Fluent):
+CMake define cuatro objetivos de prueba sin audio ni ventana: `band_metrics_test` (partición en bandas, métricas por banda y conservación de la energía), `band_synthesis_test` (máscaras, reconstrucción por solapamiento y suma, y teorema de la suma de bandas), `motion_test` (curvas y duración de las transiciones de Fluent) y `resolution_test` (resolución variable frente a latencia):
 
 ```powershell
-cmake --build build --config Release --target band_metrics_test band_synthesis_test motion_test
+cmake --build build --config Release --target band_metrics_test band_synthesis_test motion_test resolution_test
 ctest --test-dir build -C Release --output-on-failure
 ```
 
-Los criterios y sus resultados están en el documento 11, fases B y C, y en el documento 12, fase 2. Los objetivos de prueba no forman parte de la solución `.sln`.
+Los criterios y sus resultados están en el documento 11, fases B, C y D, y en el documento 12, fase 2. Los objetivos de prueba no forman parte de la solución `.sln`.
 
 ## 6. Empaquetado y Distribución
 

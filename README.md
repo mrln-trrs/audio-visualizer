@@ -114,6 +114,7 @@ audio-visualizer/
 |-- tests/band_metrics_test.cpp     Prueba numerica de bandas y Parseval (objetivo CMake)
 |-- tests/band_synthesis_test.cpp   Prueba numerica de la reconstruccion y la suma de bandas
 |-- tests/motion_test.cpp           Prueba de las curvas y duraciones de las transiciones
+|-- tests/resolution_test.cpp       Prueba de la resolucion variable frente a la latencia
 |-- shaders/                        Shaders GLSL (Modern OpenGL 3.3 Core)
 |   |-- bars.vert / bars.frag       Shader para barras y marcadores de pico
 |   |-- quad.vert                   Vertex shader común para modos de pantalla completa
@@ -141,6 +142,7 @@ audio-visualizer/
 |   |   |-- window_function.*       Hann periodica y normalizacion
 |   |   |-- band_metrics.*          Energia, RMS y pico por banda
 |   |   |-- band_synthesizer.*      Ondas por banda: IFFT enmascarada, solapamiento y suma
+|   |   |-- multi_resolution.*      FFT larga en graves y corta en agudos (resolucion variable)
 |   |   `-- analysis_thread.*       Ventana deslizante, FFT, dB, publicacion
 |   |-- render/                     OpenGL 3.3 Core
 |   |   |-- gl_window.*             Ventana GLFW, GLEW, refresco del monitor
@@ -249,7 +251,7 @@ La versión 2.0 reduce el análisis a un vector de alturas de barra. La 3.0 prop
 - **Osciloscopio apilado**, medidores por banda, dinámica de ataque y caída por banda, y detección de golpes por flujo espectral.
 - **Diseño Fluent.** Panel con material acrílico propio (desenfoque, tinte, exclusión, ruido), materiales Mica y Acrílico del sistema en Windows 11, transiciones con curvas de aceleración y contraste mínimo 4,5:1. Documento 12.
 
-Estado: fases A, B y C implementadas (trama de análisis con triple búfer; bandas configurables con métricas, dinámica por banda y medidores, tecla `6`; ondas por banda reconstruidas por IFFT enmascarada y osciloscopio apilado, tecla `5`) y diseño Fluent implementado (material acrílico propio con desenfoque, Mica y Acrílico del sistema en Windows 11, transiciones y respeto a las preferencias de accesibilidad). Queda la fase D (resolución variable) como documentación. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
+Estado: la versión 3.0 está completa. Fases A, B, C y D del documento 11 (trama de análisis con triple búfer; bandas configurables con métricas, dinámica por banda y medidores, tecla `6`; ondas por banda reconstruidas por IFFT enmascarada y osciloscopio apilado, tecla `5`; resolución variable opcional) y diseño Fluent del documento 12 (material acrílico propio, Mica y Acrílico del sistema en Windows 11, transiciones y respeto a las preferencias de accesibilidad). Cuatro pruebas numéricas ejecutables con `ctest`. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
 
 ---
 

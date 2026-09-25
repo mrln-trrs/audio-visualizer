@@ -283,7 +283,7 @@ Implementación: `ui::Transition` y fundido cruzado; preferencias del sistema le
 flowchart LR
     E5[Epica 5<br/>Trama y bandas] --> E6[Epica 6<br/>Reconstruccion y osciloscopio]
     E5 --> E7[Epica 7<br/>Fluent]
-    E6 --> CQT[Opcional<br/>Resolucion variable]
+    E6 --> CQT[Fase D<br/>Resolucion variable, completada]
 ```
 
-La épica 5 es prerrequisito de las otras dos. La 6 y la 7 son independientes entre sí y pueden ejecutarse en paralelo. La resolución variable (documento 10, sección 7) se aborda solo si tras la épica 6 la resolución en graves resulta insuficiente.
+La épica 5 fue prerrequisito de las otras dos. Las tres épicas y la fase D están completadas; la resolución variable (documento 10, sección 7) queda como opción de configuración desactivada por defecto, verificada por `tests/resolution_test.cpp`.

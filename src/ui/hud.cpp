@@ -116,6 +116,33 @@ void TabDsp(HudState& state, HudContext& ctx) {
 
     ImGui::Separator();
     ImGui::Spacing();
+    ImGui::TextColored(kAccent, "Resolucion Variable por Rangos:");
+    core::AnalysisConfig& an = cfg.analysis;
+    bool an_changed = ImGui::Checkbox("FFT larga en graves y corta en agudos", &an.multi_resolution);
+    ImGui::SameLine(); HelpMarker("Resolucion en frecuencia y latencia estan ligadas (principio de incertidumbre, documento 10). La FFT larga separa graves cercanos a cambio de retraso; la corta responde antes en agudos.");
+    if (an.multi_resolution) {
+        static const int kSizes[] = { 2048, 4096, 8192, 16384 };
+        static const char* kSizeLabels[] = { "2048 (igual que la base)", "4096", "8192", "16384" };
+        int li = 2;
+        for (int i = 0; i < 4; ++i) if (an.low_band_fft_size == kSizes[i]) li = i;
+        if (ImGui::Combo("FFT graves", &li, kSizeLabels, 4)) { an.low_band_fft_size = kSizes[li]; an_changed = true; }
+        if (ImGui::SliderFloat("Graves hasta", &an.low_band_max_hz, 60.0f, 1000.0f, "%.0f Hz")) an_changed = true;
+        static const int kHigh[] = { 256, 512, 1024, 2048 };
+        static const char* kHighLabels[] = { "256", "512", "1024", "2048 (igual que la base)" };
+        int hi = 1;
+        for (int i = 0; i < 4; ++i) if (an.high_band_fft_size == kHigh[i]) hi = i;
+        if (ImGui::Combo("FFT agudos", &hi, kHighLabels, 4)) { an.high_band_fft_size = kHigh[hi]; an_changed = true; }
+        if (ImGui::SliderFloat("Agudos desde", &an.high_band_min_hz, 500.0f, 12000.0f, "%.0f Hz")) an_changed = true;
+        const int sr = std::max(1, ctx.audio.sample_rate.load());
+        const float low_ms = 1000.0f * (an.low_band_fft_size - core::FFT_SIZE) / (2.0f * sr);
+        const float high_ms = 1000.0f * (core::FFT_SIZE - an.high_band_fft_size) / (2.0f * sr);
+        const float low_res = static_cast<float>(sr) / an.low_band_fft_size;
+        ImGui::TextColored(kWarn, "Graves: %.2f Hz por bin, +%.0f ms de latencia. Agudos: -%.0f ms de latencia.", low_res, low_ms, high_ms);
+    }
+    if (an_changed) core::ValidateAnalysisConfig(an);
+
+    ImGui::Separator();
+    ImGui::Spacing();
     ImGui::TextColored(kAccent, "Distribucion de Frecuencias (modo Barras):");
     int scale_idx = (cfg.frequency_scale == "log") ? 1 : 0;
     if (ImGui::RadioButton("Lineal (Hz constantes)", &scale_idx, 0)) cfg.frequency_scale = "linear";
@@ -368,6 +395,10 @@ void TabTelemetry(HudState& state, HudContext& ctx) {
         ImGui::Text("Flujo espectral:"); ImGui::NextColumn(); ImGui::Text("%.3f", f.spectral_flux); ImGui::NextColumn();
         ImGui::Text("Centroide:"); ImGui::NextColumn(); ImGui::Text("%.0f Hz", f.spectral_centroid_hz); ImGui::NextColumn();
         ImGui::Text("Bandas:"); ImGui::NextColumn(); ImGui::Text("%d", f.band_count()); ImGui::NextColumn();
+        ImGui::Text("Resolucion variable:"); ImGui::NextColumn();
+        if (f.multi_resolution) ImGui::Text("graves FFT %d (%.2f Hz/bin), agudos FFT %d", f.low_fft_size, static_cast<float>(f.sample_rate) / f.low_fft_size, f.high_fft_size);
+        else ImGui::Text("desactivada");
+        ImGui::NextColumn();
         ImGui::Columns(1);
     }
     else {

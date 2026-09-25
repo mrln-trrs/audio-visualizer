@@ -1,6 +1,8 @@
 #include "core/config.h"
 #include "core/types.h"
+#include "core/constants.h"
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -82,6 +84,31 @@ json BandsToJson(const BandConfig& b) {
 
 } // namespace
 
+bool operator==(const AnalysisConfig& a, const AnalysisConfig& b) {
+    return a.multi_resolution == b.multi_resolution && a.low_band_fft_size == b.low_band_fft_size &&
+           a.low_band_max_hz == b.low_band_max_hz && a.high_band_fft_size == b.high_band_fft_size &&
+           a.high_band_min_hz == b.high_band_min_hz;
+}
+
+namespace {
+int ClampPowerOfTwo(int v, int lo, int hi) {
+    int p = lo;
+    while (p * 2 <= v && p * 2 <= hi) p *= 2;
+    return p;
+}
+}
+
+std::vector<std::string> ValidateAnalysisConfig(AnalysisConfig& c) {
+    std::vector<std::string> warnings;
+    const int low = ClampPowerOfTwo(std::max(c.low_band_fft_size, FFT_SIZE), FFT_SIZE, MAX_LOW_BAND_FFT_SIZE);
+    if (low != c.low_band_fft_size) { warnings.push_back("analisis.low_band_fft_size debe ser potencia de dos entre " + std::to_string(FFT_SIZE) + " y " + std::to_string(MAX_LOW_BAND_FFT_SIZE) + "; se usa " + std::to_string(low)); c.low_band_fft_size = low; }
+    const int high = ClampPowerOfTwo(std::max(c.high_band_fft_size, 256), 256, FFT_SIZE);
+    if (high != c.high_band_fft_size) { warnings.push_back("analisis.high_band_fft_size debe ser potencia de dos entre 256 y " + std::to_string(FFT_SIZE) + "; se usa " + std::to_string(high)); c.high_band_fft_size = high; }
+    c.low_band_max_hz = std::clamp(c.low_band_max_hz, 20.0f, 2000.0f);
+    c.high_band_min_hz = std::clamp(c.high_band_min_hz, c.low_band_max_hz + 1.0f, 20000.0f);
+    return warnings;
+}
+
 bool operator==(const BandConfig& a, const BandConfig& b) {
     return a.mode == b.mode && a.f_min == b.f_min && a.f_max == b.f_max &&
            a.divisions_per_octave == b.divisions_per_octave && a.linear_band_count == b.linear_band_count &&
@@ -156,6 +183,18 @@ void LoadConfig(SharedConfigData& shared, const std::string& filename) {
     for (const std::string& w : ValidateBandConfig(c.bands, c.attack_ms, c.release_ms)) {
         std::cerr << "Config: " << w << std::endl;
     }
+
+    if (data.contains("analisis")) {
+        const json& a = data["analisis"];
+        Read(a, "multi_resolution", c.analysis.multi_resolution);
+        Read(a, "low_band_fft_size", c.analysis.low_band_fft_size);
+        Read(a, "low_band_max_hz", c.analysis.low_band_max_hz);
+        Read(a, "high_band_fft_size", c.analysis.high_band_fft_size);
+        Read(a, "high_band_min_hz", c.analysis.high_band_min_hz);
+    }
+    for (const std::string& w : ValidateAnalysisConfig(c.analysis)) {
+        std::cerr << "Config: " << w << std::endl;
+    }
 }
 
 bool SaveConfig(SharedConfigData& shared, const std::string& filename) {
@@ -190,6 +229,13 @@ bool SaveConfig(SharedConfigData& shared, const std::string& filename) {
         { "respect_system_effects", c.respect_system_effects }
     };
     j["bandas"] = BandsToJson(c.bands);
+    j["analisis"] = {
+        { "multi_resolution", c.analysis.multi_resolution },
+        { "low_band_fft_size", c.analysis.low_band_fft_size },
+        { "low_band_max_hz", c.analysis.low_band_max_hz },
+        { "high_band_fft_size", c.analysis.high_band_fft_size },
+        { "high_band_min_hz", c.analysis.high_band_min_hz }
+    };
 
     std::ofstream file(filename);
     if (!file.is_open()) {

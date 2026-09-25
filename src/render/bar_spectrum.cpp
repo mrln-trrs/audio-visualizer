@@ -9,8 +9,9 @@ void BarSpectrum::RebuildMap(const MapKey& key, int fft_size) {
     key_ = key;
     lo_.resize(key.num_bars);
     hi_.resize(key.num_bars);
-    const double bin_hz = static_cast<double>(key.sample_rate) / fft_size;
-    const double max_bin = fft_size / 2;
+    center_hz_.resize(key.num_bars);
+    source_.resize(key.num_bars);
+    source_counts_[0] = source_counts_[1] = source_counts_[2] = 0;
 
     const double fmin = std::max(1.0, static_cast<double>(key.min_hz));
     const double fmax = std::max(fmin * 1.01, static_cast<double>(key.max_hz));
@@ -26,6 +27,19 @@ void BarSpectrum::RebuildMap(const MapKey& key, int fft_size) {
             f0 = static_cast<double>(i) * key.hz_per_bar;
             f1 = static_cast<double>(i + 1) * key.hz_per_bar;
         }
+        const double fc = 0.5 * (f0 + f1);
+        center_hz_[i] = static_cast<float>(fc);
+
+        // Fuente según la frecuencia central (docs/10, sección 7.4).
+        int n = fft_size;
+        Source src = kBase;
+        if (key.multi && key.low_fft > 0 && fc < key.low_max_hz) { src = kLow; n = key.low_fft; }
+        else if (key.multi && key.high_fft > 0 && fc >= key.high_min_hz) { src = kHigh; n = key.high_fft; }
+        source_[i] = src;
+        ++source_counts_[src];
+
+        const double bin_hz = static_cast<double>(key.sample_rate) / n;
+        const double max_bin = n / 2;
         lo_[i] = static_cast<float>(std::clamp(f0 / bin_hz, 0.0, max_bin));
         hi_[i] = static_cast<float>(std::clamp(f1 / bin_hz, 0.0, max_bin));
     }
@@ -37,7 +51,8 @@ void BarSpectrum::AssignBands(const core::BandLayout& bands, const core::Visuali
     attack_ms_.resize(n);
     release_ms_.resize(n);
     for (int i = 0; i < n; ++i) {
-        const int center_bin = static_cast<int>(0.5f * (lo_[i] + hi_[i]));
+        // La partición en bandas está en bins de la FFT base; se busca por frecuencia central.
+        const int center_bin = static_cast<int>(center_hz_[i] / bands.bin_resolution_hz);
         const int b = bands.BandForBin(center_bin);
         attack_ms_[i] = b >= 0 ? bands.bands[b].attack_ms : cfg.attack_ms;
         release_ms_[i] = b >= 0 ? bands.bands[b].release_ms : cfg.release_ms;
@@ -48,6 +63,7 @@ void BarSpectrum::AssignBands(const core::BandLayout& bands, const core::Visuali
 // vacías); si abarca varios, toma el pico.
 float BarSpectrum::SampleBand(const std::vector<float>& magnitude, float lo, float hi) {
     const int last = static_cast<int>(magnitude.size()) - 1;
+    if (last < 0) return 0.0f;
     if (hi - lo < 1.0f) {
         const float center = 0.5f * (lo + hi);
         const int i0 = std::clamp(static_cast<int>(center), 0, last);
@@ -78,9 +94,14 @@ void BarSpectrum::Update(const core::AnalysisFrame& frame, int num_bars, const c
     key.hz_per_bar = cfg.bin_grouping_factor;
     key.min_hz = cfg.min_frequency;
     key.max_hz = cfg.max_frequency;
+    key.multi = frame.multi_resolution && !frame.low_magnitude.empty() && !frame.high_magnitude.empty();
+    key.low_fft = key.multi ? frame.low_fft_size : 0;
+    key.low_max_hz = key.multi ? frame.low_band_max_hz : 0.0f;
+    key.high_fft = key.multi ? frame.high_fft_size : 0;
+    key.high_min_hz = key.multi ? frame.high_band_min_hz : 0.0f;
     if (!(key == key_)) RebuildMap(key, frame.fft_size);
 
-    if (bands && bands->count() > 0) {
+    if (bands && bands->count() > 0 && bands->bin_resolution_hz > 0.0f) {
         if (assigned_layout_version_ != band_layout_version) {
             AssignBands(*bands, cfg);
             assigned_layout_version_ = band_layout_version;
@@ -95,7 +116,8 @@ void BarSpectrum::Update(const core::AnalysisFrame& frame, int num_bars, const c
     const float range_db = std::max(1.0f, cfg.dynamic_range_db);
     values_.resize(num_bars);
     for (int i = 0; i < num_bars; ++i) {
-        const float m = SampleBand(frame.magnitude, lo_[i], hi_[i]);
+        const std::vector<float>& mag = source_[i] == kLow ? frame.low_magnitude : source_[i] == kHigh ? frame.high_magnitude : frame.magnitude;
+        const float m = SampleBand(mag, lo_[i], hi_[i]);
         const float db = 20.0f * std::log10(m + 1e-9f);
         values_[i] = std::clamp((db + range_db) / range_db, 0.0f, 1.0f);
     }

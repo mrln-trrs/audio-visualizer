@@ -100,5 +100,5 @@ flowchart TD
 | 08 Contribución | Implementado | 2.0 |
 | 09 Recomendaciones | Propuesta | 3.0 |
 | 10 Teoría de descomposición | Propuesta | 3.0 |
-| 11 Arquitectura de análisis | Mixto: fases A, B y C implementadas, D propuesta | 3.0 |
+| 11 Arquitectura de análisis | Implementado: fases A a D | 3.0 |
 | 12 Diseño Fluent | Mixto: fases 1 a 4 implementadas salvo detalles anotados | 3.0 |

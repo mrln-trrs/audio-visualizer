@@ -48,6 +48,9 @@
     <ClCompile Include="src\analysis\band_synthesizer.cpp">
       <Filter>Fuentes\analysis</Filter>
     </ClCompile>
+    <ClCompile Include="src\analysis\multi_resolution.cpp">
+      <Filter>Fuentes\analysis</Filter>
+    </ClCompile>
     <ClCompile Include="src\analysis\window_function.cpp">
       <Filter>Fuentes\analysis</Filter>
     </ClCompile>
@@ -168,6 +171,9 @@
       <Filter>Fuentes\analysis</Filter>
     </ClInclude>
     <ClInclude Include="src\analysis\band_synthesizer.h">
+      <Filter>Fuentes\analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="src\analysis\multi_resolution.h">
       <Filter>Fuentes\analysis</Filter>
     </ClInclude>
     <ClInclude Include="src\analysis\window_function.h">

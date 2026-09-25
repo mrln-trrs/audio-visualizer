@@ -50,6 +50,7 @@ set(PROJECT_SOURCES
     src/analysis/analysis_thread.cpp
     src/analysis/band_metrics.cpp
     src/analysis/band_synthesizer.cpp
+    src/analysis/multi_resolution.cpp
     src/analysis/window_function.cpp
     src/app/application.cpp
     src/audio/capture_session.cpp
@@ -84,6 +85,7 @@ set(PROJECT_SOURCES
     src/analysis/analysis_thread.h
     src/analysis/band_metrics.h
     src/analysis/band_synthesizer.h
+    src/analysis/multi_resolution.h
     src/analysis/window_function.h
     src/app/application.h
     src/audio/capture_session.h
@@ -203,6 +205,24 @@ if(MSVC)
     target_compile_options(motion_test PRIVATE /W4 /utf-8 /EHsc /permissive-)
 endif()
 add_test(NAME motion COMMAND motion_test)
+
+add_executable(resolution_test
+    tests/resolution_test.cpp
+    src/core/config.cpp
+    src/core/types.cpp
+    src/core/band_layout.cpp
+    src/analysis/window_function.cpp
+    src/analysis/multi_resolution.cpp
+)
+target_include_directories(resolution_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${FFTW_DIR} ${JSON_DIR}/include)
+target_link_directories(resolution_test PRIVATE ${FFTW_DIR})
+target_link_libraries(resolution_test PRIVATE libfftw3f-3.lib)
+if(MSVC)
+    target_compile_options(resolution_test PRIVATE /W4 /utf-8 /EHsc /permissive-)
+endif()
+add_custom_command(TARGET resolution_test POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${FFTW_DIR}/libfftw3f-3.dll" "$<TARGET_FILE_DIR:resolution_test>/libfftw3f-3.dll")
+add_test(NAME resolution COMMAND resolution_test)
 
 # -----------------------------------------------------------------------------
 # Post-build: DLL, shaders y config.json junto al ejecutable

@@ -51,6 +51,17 @@ struct AnalysisFrame {
     std::vector<float> band_waveform;
     std::vector<float> mix_hop_waveform;
 
+    // Resolución variable (fase D). Espectros adicionales que terminan en el mismo instante que
+    // la ventana base: una FFT larga para los graves (mejor resolución en frecuencia, más latencia)
+    // y una corta para los agudos (menos latencia). Vacíos si no está activa.
+    bool multi_resolution = false;
+    int low_fft_size = 0;
+    float low_band_max_hz = 0.0f;
+    std::vector<float> low_magnitude;   // low_fft_size/2+1 bins, misma normalización que magnitude
+    int high_fft_size = 0;
+    float high_band_min_hz = 0.0f;
+    std::vector<float> high_magnitude;  // high_fft_size/2+1 bins
+
     float bin_resolution_hz() const { return sample_rate > 0 ? static_cast<float>(sample_rate) / fft_size : 0.0f; }
     bool valid() const { return sequence > 0 && sample_rate > 0 && !magnitude.empty(); }
     int band_count() const { return static_cast<int>(band_energy.size()); }

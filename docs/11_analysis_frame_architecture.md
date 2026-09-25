@@ -1,6 +1,6 @@
 # Arquitectura de la Capa de Análisis y Descomposición en Bandas - Audio Visualizer 3.0
 
-> **Estado:** Mixto. Las fases A (trama de análisis, triple búfer), B (bandas configurables, métricas y dinámica por banda, medidores) y C (ondas por banda por IFFT enmascarada, osciloscopio apilado) están implementadas y verificadas. La fase D (resolución variable) sigue siendo propuesta.  
+> **Estado:** Implementado. Las cuatro fases (A trama de análisis y triple búfer, B bandas y métricas, C ondas por banda y osciloscopio apilado, D resolución variable) están implementadas y verificadas con pruebas numéricas.  
 > **Alcance:** Arquitectura de la capa de análisis: estructuras de datos, hilos, texturas, configuración, presupuesto y plan por fases. La base matemática está en el documento 10.  
 > **Documentos relacionados:** [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md), [04_kanban_bdd.md](04_kanban_bdd.md), [07_user_manual_and_config.md](07_user_manual_and_config.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
@@ -312,10 +312,30 @@ Medido en la máquina de referencia con el modo apilado activo y siete bandas: h
 - Modo osciloscopio apilado con reducción por mínimo y máximo.
 - **Criterio.** Dada cualquier señal, cuando se suman numéricamente las $K$ ondas de banda y se comparan con la mezcla, entonces el error máximo es inferior a $10^{-5}$ en escala completa (teorema 4.3). Y dado un golpe de bombo, cuando se observa la traza grave, entonces el golpe aparece en el mismo cuadro que en la traza de mezcla.
 
-### Fase D. Resolución variable (opcional)
+### Fase D. Resolución variable (implementada, opcional por configuración)
+
+Estado: completada. Archivos: `src/analysis/multi_resolution.*` (FFT larga para graves y corta para agudos con Hann periódica y la misma normalización que la base, planes con `FFTW_ESTIMATE` para poder reconfigurar en caliente), sección `analisis` de `config.json` (`multi_resolution`, `low_band_fft_size`, `low_band_max_hz`, `high_band_fft_size`, `high_band_min_hz`), `render/bar_spectrum` (cada barra lee de la fuente que corresponde a su frecuencia central), controles en la pestaña "DSP y Audio" del HUD con la latencia añadida y ahorrada calculada a partir de la frecuencia de muestreo, y prueba en `tests/resolution_test.cpp`. El anillo de captura pasa a 16384 muestras para contener la ventana larga.
+
+Desactivada por defecto: es un compromiso que el usuario debe elegir con conocimiento del coste, como exige el RNF 9 del documento 01.
+
+Resultados de la prueba numérica:
+
+| Comprobación | Resultado | Fundamento |
+|---|---|---|
+| Tonos de 40 y 55 Hz con la FFT de 8192 | dos picos | 5,86 Hz por bin, lóbulo principal de Hann de 23 Hz |
+| Los mismos tonos con la FFT base de 2048 | un solo pico | 23,4 Hz por bin, lóbulo de 94 Hz: se funden |
+| Tonos de 40 y 42,5 Hz (un semitono) con 8192 | un solo pico | Separarlos exige ventanas de casi medio segundo (documento 10, tabla 5.3) |
+| Latencia añadida en graves | 64 ms | $(8192 - 2048) / (2 \cdot 48000)$ |
+| Latencia ahorrada en agudos | 16 ms | $(2048 - 512) / (2 \cdot 48000)$ |
+| Pico de 1 kHz coherente entre las tres resoluciones | diferencia menor que $10^{-3}$ dB | Misma normalización $2/\sum w$ |
+
+El criterio original de esta fase, "dos senoidales de 40 y 42,5 Hz distinguibles", era inconsistente con la sección 5 del documento 10: un semitono a 40 Hz son 2,5 Hz y exige una ventana de un segundo. Se sustituye por 40 y 55 Hz, que es lo que una FFT de 8192 puede separar y una de 2048 no. La prueba incluye el caso de 40 y 42,5 Hz para dejar constancia de que sigue sin separarse.
+
+Coste medido con la opción activa (FFT adicionales de 8192 y 512 por trama, 100 tramas por segundo): hilo de análisis al 1,2 % de un núcleo.
+
 
 - Pirámide de tres FFT (8192, 2048, 512) para graves, medios y agudos.
-- **Criterio.** Dadas dos senoidales de 40 y 42,5 Hz simultáneas, cuando se observa el espectro grave, entonces aparecen como dos picos distinguibles; y la interfaz muestra la latencia añadida de la banda grave.
+- **Criterio (corregido).** Dadas dos senoidales de 40 y 55 Hz simultáneas, cuando se observa el espectro grave con la FFT de 8192, entonces aparecen como dos picos distinguibles y con la de 2048 como uno solo; dos senoidales de 40 y 42,5 Hz siguen sin separarse, como predice la teoría; y la interfaz muestra la latencia añadida de la banda grave.
 
 ## 12. Decisiones descartadas
 
