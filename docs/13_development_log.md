@@ -60,7 +60,7 @@ Cada entrada indica objetivo, qué se hizo, qué falló y cómo se verificó.
 
 - **Hecho.** README con arquitectura, pipeline, sincronización, latencia, configuración y dependencias. Recorte de `json-develop` de 18 MB y 1447 archivos a 1,2 MB y 48, porque GitHub avisó de dos vulnerabilidades en el `requirements.txt` de la documentación Python de nlohmann/json (`mkdocs-material` y `wheel`). Ambas alertas figuran como resueltas tras el recorte.
 - **Fallo propio.** Un `CppProperties.json` generado por Visual Studio en modo "Abrir carpeta" se coló en el commit `915ede1`; se retiró y se añadió al `.gitignore` en `a7a3c9d`.
-- **Pendiente externo.** La rama remota `Marlon`, con un único commit superado, no se pudo borrar desde esta sesión por política de permisos; el usuario puede hacerlo con `git push origin --delete Marlon`.
+- **Ramas.** La rama `librerias-externas` se borró tras integrarla. La rama remota `Marlon`, con un único commit superado (rutas absolutas), no se pudo borrar desde la sesión por política de permisos; el usuario la borró después. A fecha de este documento la única rama es `master`.
 
 ### `4f4c6f7` Audio Visualizer 2.0
 
