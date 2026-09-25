@@ -4,10 +4,7 @@ x64/
 *.vcxproj.user
 *.vcxproj.filters
 
-# Librerías externas
-# Se recomienda gestionar estas con un gestor de paquetes (como vcpkg)
-# y no subirlas al repositorio.
-fftw-3.3.5-dll64/
-glew-2.1.0/
-glfw-3.4.bin.WIN64/
-json-develop/
+# Librerías externas (glfw-3.4.bin.WIN64/, glew-2.1.0/, fftw-3.3.5-dll64/, json-develop/)
+# Se versionan dentro del repo a propósito para no tener que descargarlas de nuevo.
+# Solo se excluyen los intermedios generados al crear las .lib de FFTW.
+fftw-3.3.5-dll64/*.exp
