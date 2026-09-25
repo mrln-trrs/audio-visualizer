@@ -48,7 +48,6 @@ target_include_directories(imgui_lib PUBLIC
 # -----------------------------------------------------------------------------
 set(PROJECT_SOURCES
     src/analysis/analysis_thread.cpp
-    src/analysis/band_mapper.cpp
     src/analysis/window_function.cpp
     src/app/application.cpp
     src/audio/capture_session.cpp
@@ -58,6 +57,7 @@ set(PROJECT_SOURCES
     src/core/config.cpp
     src/core/types.cpp
     src/main.cpp
+    src/render/bar_spectrum.cpp
     src/render/data_textures.cpp
     src/render/frame_limiter.cpp
     src/render/fullscreen_quad.cpp
@@ -73,17 +73,19 @@ set(PROJECT_SOURCES
     src/ui/telemetry.cpp
     src/ui/theme.cpp
     src/analysis/analysis_thread.h
-    src/analysis/band_mapper.h
     src/analysis/window_function.h
     src/app/application.h
     src/audio/capture_session.h
     src/audio/capture_thread.h
     src/audio/device_enumerator.h
     src/audio/sample_format.h
+    src/core/analysis_frame.h
     src/core/config.h
     src/core/constants.h
     src/core/shared_state.h
+    src/core/triple_buffer.h
     src/core/types.h
+    src/render/bar_spectrum.h
     src/render/data_textures.h
     src/render/embedded_shaders.h
     src/render/frame_limiter.h

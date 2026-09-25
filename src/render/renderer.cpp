@@ -15,6 +15,7 @@
 #include "render/gl_window.h"
 #include "render/fullscreen_quad.h"
 #include "render/data_textures.h"
+#include "render/bar_spectrum.h"
 #include "render/spectrum_dynamics.h"
 #include "render/frame_limiter.h"
 #include "render/modes/visual_mode.h"
@@ -68,7 +69,7 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
         std::cerr << "Render: no se pudo inicializar GLFW." << std::endl;
         return;
     }
-    GLFWwindow* window = CreateMainWindow(1024, 600, "Audio Visualizer 2.0", cfg.vsync, &vis);
+    GLFWwindow* window = CreateMainWindow(1024, 600, "Audio Visualizer 2.0", cfg.vsync);
     if (!window) {
         glfwTerminate();
         return;
@@ -87,6 +88,7 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
     quad.Init();
     DataTextures textures;
     textures.Init();
+    BarSpectrum bar_spectrum;
     SpectrumDynamics dynamics;
 
     std::array<std::unique_ptr<IVisualMode>, core::MODE_COUNT> modes;
@@ -99,10 +101,8 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
     }
 
     // Estado del bucle.
-    std::vector<float> spectrum;
-    std::vector<float> waveform;
-    uint64_t seen_generation = 0;
-    uint64_t title_generation = 0;
+    uint64_t seen_sequence = 0;
+    uint64_t title_sequence = 0;
     int title_frames = 0;
     double last_time = glfwGetTime();
     double title_time = last_time;
@@ -124,29 +124,29 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
 
         keys.Poll(window, hud, cfg);
 
-        // Recoger el espectro nuevo si lo hay. El bloqueo dura una copia de ~1000 floats.
-        const uint64_t generation = vis.generation.load(std::memory_order_acquire);
-        const bool has_new_spectrum = (generation != seen_generation);
-        if (has_new_spectrum) {
-            std::lock_guard<std::mutex> lock(vis.mtx);
-            spectrum = vis.spectrum;
-            waveform = vis.waveform;
-            seen_generation = generation;
-        }
-
-        const int num_bars = std::max(1, vis.atomic_num_bars.load());
-        dynamics.Update(spectrum, num_bars, cfg, dt);
-
-        // Texturas: las alturas animadas se suben cada cuadro para que el modo radial se mueva a
-        // la tasa del monitor; la onda y la fila del espectrograma solo cuando hay datos nuevos.
-        textures.UploadSpectrum(dynamics.heights());
-        if (has_new_spectrum) {
-            textures.UploadWaveform(waveform);
-            textures.PushWaterfallRow(spectrum, cfg.amplitude_factor);
-        }
+        // Última trama de análisis, sin bloqueo ni copia.
+        const core::AnalysisFrame& frame = vis.analysis.Read();
+        const bool has_new_frame = frame.valid() && frame.sequence != seen_sequence;
+        if (has_new_frame) seen_sequence = frame.sequence;
 
         int fbw = 0, fbh = 0;
         glfwGetFramebufferSize(window, &fbw, &fbh);
+        // Una barra por píxel de ancho.
+        const int num_bars = std::max(1, fbw);
+
+        // Espectro por barra (mapeo de bins a píxeles) y su animación temporal.
+        if (has_new_frame) bar_spectrum.Update(frame, num_bars, cfg);
+        else if (static_cast<int>(bar_spectrum.values().size()) != num_bars) bar_spectrum.Update(frame, num_bars, cfg);
+        dynamics.Update(bar_spectrum.values(), num_bars, cfg, dt);
+
+        // Texturas: las alturas animadas se suben cada cuadro para que el modo radial se mueva a
+        // la tasa del monitor; la onda y la fila del espectrograma solo cuando hay trama nueva.
+        textures.UploadSpectrum(dynamics.heights());
+        if (has_new_frame) {
+            textures.UploadWaveform(frame.mix_waveform);
+            textures.PushWaterfallRow(bar_spectrum.values(), cfg.amplitude_factor);
+        }
+
         glViewport(0, 0, fbw, fbh);
         glClearColor(0.06f, 0.06f, 0.08f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -161,7 +161,7 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
         ImGui::NewFrame();
         telemetry.num_bars = num_bars;
         telemetry.limiter_active = limiter.active();
-        ui::HudContext hud_ctx{ cfg, shared_config, vis, audio, telemetry, now };
+        ui::HudContext hud_ctx{ cfg, shared_config, vis, audio, telemetry, frame, now };
         ui::DrawHud(hud, hud_ctx);
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -174,7 +174,7 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
         if (now - title_time >= 1.0) {
             const double elapsed = now - title_time;
             const double fps = title_frames / elapsed;
-            const double ups = static_cast<double>(seen_generation - title_generation) / elapsed;
+            const double ups = static_cast<double>(seen_sequence - title_sequence) / elapsed;
             telemetry.Record(static_cast<float>(fps), static_cast<float>(ups));
             telemetry.monitor_hz = RefreshRateForWindow(window);
             limiter.UpdateEverySecond(fps, telemetry.monitor_hz, cfg.max_fps, glfwGetTime());
@@ -182,7 +182,7 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
             glfwSetWindowTitle(window, ui::BuildWindowTitle(modes[mode_index]->Name(), telemetry, audio.sample_rate.load()).c_str());
             title_frames = 0;
             title_time = now;
-            title_generation = seen_generation;
+            title_sequence = seen_sequence;
         }
     }
 

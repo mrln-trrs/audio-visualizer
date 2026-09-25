@@ -1,6 +1,7 @@
 #include "ui/hud.h"
 
 #include <vector>
+#include <cmath>
 #include <imgui.h>
 
 #include "ui/theme.h"
@@ -174,6 +175,27 @@ void TabTelemetry(HudState& state, HudContext& ctx) {
     ImGui::Text("Resolucion Barras:"); ImGui::NextColumn();
     ImGui::Text("%d px", t.num_bars); ImGui::NextColumn();
     ImGui::Columns(1);
+
+    ImGui::Separator();
+    ImGui::Spacing();
+    ImGui::TextColored(kAccent, "Trama de Analisis (ultima publicada):");
+    const core::AnalysisFrame& f = ctx.frame;
+    if (f.valid()) {
+        const float rms_db = 20.0f * std::log10(f.rms + 1e-9f);
+        const float peak_db = 20.0f * std::log10(f.peak + 1e-9f);
+        ImGui::Columns(2, "AnalisisCols", false);
+        ImGui::Text("Secuencia:"); ImGui::NextColumn(); ImGui::Text("%llu", static_cast<unsigned long long>(f.sequence)); ImGui::NextColumn();
+        ImGui::Text("FFT / salto / bins:"); ImGui::NextColumn(); ImGui::Text("%d / %d / %d", f.fft_size, f.hop_size, static_cast<int>(f.magnitude.size())); ImGui::NextColumn();
+        ImGui::Text("Resolucion por bin:"); ImGui::NextColumn(); ImGui::Text("%.2f Hz", f.bin_resolution_hz()); ImGui::NextColumn();
+        ImGui::Text("RMS:"); ImGui::NextColumn(); ImGui::Text("%.1f dBFS", rms_db); ImGui::NextColumn();
+        ImGui::Text("Pico:"); ImGui::NextColumn(); ImGui::Text("%.1f dBFS", peak_db); ImGui::NextColumn();
+        ImGui::Text("Flujo espectral:"); ImGui::NextColumn(); ImGui::Text("%.3f", f.spectral_flux); ImGui::NextColumn();
+        ImGui::Text("Centroide:"); ImGui::NextColumn(); ImGui::Text("%.0f Hz", f.spectral_centroid_hz); ImGui::NextColumn();
+        ImGui::Columns(1);
+    }
+    else {
+        ImGui::TextDisabled("Sin tramas todavia (esperando audio).");
+    }
 
     ImGui::Separator();
     ImGui::Spacing();

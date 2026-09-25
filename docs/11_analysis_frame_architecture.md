@@ -1,6 +1,6 @@
 # Arquitectura de la Capa de Análisis y Descomposición en Bandas - Audio Visualizer 3.0
 
-> **Estado:** Propuesta (versión 3.0). No implementado.  
+> **Estado:** Mixto. La fase A (trama de análisis, triple búfer, modos leyendo de la trama) está implementada y verificada. Las fases B, C y D siguen siendo propuesta.  
 > **Alcance:** Arquitectura de la capa de análisis: estructuras de datos, hilos, texturas, configuración, presupuesto y plan por fases. La base matemática está en el documento 10.  
 > **Documentos relacionados:** [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md), [04_kanban_bdd.md](04_kanban_bdd.md), [07_user_manual_and_config.md](07_user_manual_and_config.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
@@ -30,10 +30,10 @@ Esto convierte cada visualización nueva en un shader más, sin modificar el an�
 
 | Aspecto | Estado actual | Limitación |
 |---|---|---|
-| Salida del procesado | Un `vector<float>` de magnitudes en dB normalizadas, con un valor por píxel de ancho | Descarta la fase, descarta la magnitud lineal y acopla el análisis al ancho de la ventana |
+| Salida del procesado | `AnalysisFrame` con magnitud, dB, fase, RMS, pico, flujo, centroide y mezcla (fase A, implementada) | Faltan los campos por banda (fase B) |
 | Forma de onda | Últimas 1024 muestras crudas | Solo la mezcla; no hay ondas por banda |
 | Dinámica | `attack_ms` y `release_ms` globales | Un bombo y un plato comparten la misma inercia |
-| Bandas | Implícitas, una por píxel | No configurables ni nombrables; no hay energía por banda |
+| Bandas | El mapeo a píxeles vive en `render/bar_spectrum` (fase A); no hay bandas nombradas | Fase B |
 | Historial | Solo en la textura del espectrograma, ya cuantizado | No reutilizable por otros modos |
 | Ventana | Hann periódica (denominador $N$), en `src/analysis/window_function.cpp` | Ya cumple la condición de la teoría, sección 4.2; sin trabajo pendiente |
 
@@ -255,7 +255,10 @@ Un núcleo moderno sostiene decenas de GFLOP/s en `float` con SIMD; las cifras a
 
 ## 11. Plan por fases y criterios de aceptación
 
-### Fase A. Trama de análisis
+### Fase A. Trama de análisis (implementada)
+
+Estado: completada. Archivos: `src/core/analysis_frame.h`, `src/core/triple_buffer.h`, `src/analysis/analysis_thread.cpp`, `src/render/bar_spectrum.cpp`. La estructura publicada contiene magnitud, dB, fase, RMS, pico, flujo espectral, centroide y la mezcla; los campos por banda llegan en la fase B. Medido en la máquina de referencia: hilo de análisis al 0,5 % de un núcleo con 100 tramas por segundo; los cuatro modos son visualmente equivalentes a la 2.0.
+
 
 - Sustituir el vector de alturas por `AnalysisFrame` con magnitud, dB, RMS, pico y flujo. Ventana de Hann periódica.
 - Triple búfer.

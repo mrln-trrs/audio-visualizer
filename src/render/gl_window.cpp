@@ -1,23 +1,17 @@
 #include "render/gl_window.h"
 
 #include <iostream>
-#include <algorithm>
 
 namespace render {
 namespace {
 
-void FramebufferSizeCallback(GLFWwindow* window, int width, int height) {
+void FramebufferSizeCallback(GLFWwindow*, int width, int height) {
     glViewport(0, 0, width, height);
-    auto* vis = static_cast<core::VisualizerData*>(glfwGetWindowUserPointer(window));
-    if (vis) {
-        // Una barra por píxel de ancho. El hilo de análisis se adapta en su siguiente ciclo.
-        vis->atomic_num_bars.store(std::max(1, width));
-    }
 }
 
 } // namespace
 
-GLFWwindow* CreateMainWindow(int width, int height, const char* title, bool vsync, core::VisualizerData* vis) {
+GLFWwindow* CreateMainWindow(int width, int height, const char* title, bool vsync) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -30,7 +24,6 @@ GLFWwindow* CreateMainWindow(int width, int height, const char* title, bool vsyn
         return nullptr;
     }
 
-    glfwSetWindowUserPointer(window, vis);
     glfwMakeContextCurrent(window);
     // 1 = un cuadro por refresco del monitor. Si el driver lo ignora, FrameLimiter lo detecta.
     glfwSwapInterval(vsync ? 1 : 0);
@@ -46,7 +39,7 @@ GLFWwindow* CreateMainWindow(int width, int height, const char* title, bool vsyn
 
     int fbw = width, fbh = height;
     glfwGetFramebufferSize(window, &fbw, &fbh);
-    FramebufferSizeCallback(window, fbw, fbh);
+    glViewport(0, 0, fbw, fbh);
     return window;
 }
 

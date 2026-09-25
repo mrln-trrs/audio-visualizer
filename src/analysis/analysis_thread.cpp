@@ -8,7 +8,6 @@
 #include <fftw3.h>
 
 #include "analysis/window_function.h"
-#include "analysis/band_mapper.h"
 
 namespace analysis {
 namespace {
@@ -16,15 +15,16 @@ namespace {
 using core::FFT_SIZE;
 using core::HOP_SIZE;
 using core::RING_MASK;
+using core::SPECTRUM_BINS;
 
-// Copia las FFT_SIZE muestras más recientes del anillo, ya enventanadas, y las últimas
-// WAVEFORM_SNAPSHOT_SIZE muestras crudas. Debe llamarse con audio.mtx tomado.
-void SnapshotFromRing(const core::AudioData& audio, const AnalysisWindow& window, std::vector<float>& frame, std::vector<float>& waveform) {
+// Copia las FFT_SIZE muestras más recientes del anillo (crudas) y las últimas
+// WAVEFORM_SNAPSHOT_SIZE para el osciloscopio. Debe llamarse con audio.mtx tomado.
+void SnapshotFromRing(const core::AudioData& audio, std::vector<float>& raw, std::vector<float>& waveform) {
     const uint64_t end = audio.total_samples;
     const int64_t start = static_cast<int64_t>(end) - FFT_SIZE;
     for (int n = 0; n < FFT_SIZE; ++n) {
         const int64_t idx = start + n;
-        frame[n] = (idx < 0) ? 0.0f : audio.ring[static_cast<uint64_t>(idx) & RING_MASK] * window.coefficients[n];
+        raw[n] = (idx < 0) ? 0.0f : audio.ring[static_cast<uint64_t>(idx) & RING_MASK];
     }
     const int wave_len = static_cast<int>(waveform.size());
     const int64_t wave_start = static_cast<int64_t>(end) - wave_len;
@@ -34,38 +34,42 @@ void SnapshotFromRing(const core::AudioData& audio, const AnalysisWindow& window
     }
 }
 
+void PreallocateFrame(core::AnalysisFrame& f) {
+    f.magnitude.assign(SPECTRUM_BINS, 0.0f);
+    f.magnitude_db.assign(SPECTRUM_BINS, -180.0f);
+    f.phase.assign(SPECTRUM_BINS, 0.0f);
+    f.mix_waveform.assign(core::WAVEFORM_SNAPSHOT_SIZE, 0.0f);
+}
+
 } // namespace
 
-void AnalysisThread(core::AudioData& audio, core::VisualizerData& vis, core::SharedConfigData& shared_config) {
-    std::cout << "Analisis: hilo iniciado (FFT " << FFT_SIZE << ", salto " << HOP_SIZE << ")." << std::endl;
-
-    core::VisualizerConfig cfg;
-    uint64_t seen_config_version = 0;
-    {
-        std::lock_guard<std::mutex> lock(shared_config.mtx);
-        cfg = shared_config.config;
-        seen_config_version = shared_config.version.load();
-    }
+void AnalysisThread(core::AudioData& audio, core::VisualizerData& vis) {
+    std::cout << "Analisis: hilo iniciado (FFT " << FFT_SIZE << ", salto " << HOP_SIZE << ", " << SPECTRUM_BINS << " bins)." << std::endl;
 
     const AnalysisWindow window = MakePeriodicHann(FFT_SIZE);
 
+    std::vector<float> raw(FFT_SIZE);
     std::vector<float> frame(FFT_SIZE);
-    fftwf_complex* fft_out = fftwf_alloc_complex(FFT_SIZE / 2 + 1);
+    std::vector<float> waveform(core::WAVEFORM_SNAPSHOT_SIZE, 0.0f);
+    std::vector<float> previous_magnitude(SPECTRUM_BINS, 0.0f);
+
+    fftwf_complex* fft_out = fftwf_alloc_complex(SPECTRUM_BINS);
     if (!fft_out) {
         std::cerr << "Analisis: sin memoria para la FFT." << std::endl;
         return;
     }
     fftwf_plan plan = fftwf_plan_dft_r2c_1d(FFT_SIZE, frame.data(), fft_out, FFTW_MEASURE);
 
-    std::vector<float> magnitude(FFT_SIZE / 2 + 1);
-    std::vector<float> spectrum;
-    std::vector<float> waveform(core::WAVEFORM_SNAPSHOT_SIZE, 0.0f);
-    BandMap bands;
-    int bands_num_bars = -1;
-    int bands_sample_rate = 0;
+    // Sin asignaciones de memoria en el bucle: los tres búferes se preasignan aquí.
+    for (int i = 0; i < core::TripleBuffer<core::AnalysisFrame>::kSlots; ++i) {
+        PreallocateFrame(vis.analysis.slot(i));
+    }
+
     uint64_t consumed = 0; // total_samples en la última ventana procesada
+    uint64_t sequence = 0;
 
     while (true) {
+        uint64_t sample_position = 0;
         {
             std::unique_lock<std::mutex> lock(audio.mtx);
             audio.cv.wait(lock, [&] {
@@ -74,51 +78,54 @@ void AnalysisThread(core::AudioData& audio, core::VisualizerData& vis, core::Sha
             if (vis.should_terminate.load()) break;
             // Siempre las muestras más recientes: si llegan varios saltos de golpe se salta al
             // final en lugar de acumular retraso.
-            SnapshotFromRing(audio, window, frame, waveform);
+            SnapshotFromRing(audio, raw, waveform);
             consumed = audio.total_samples;
-        }
-
-        // Recarga de configuración en caliente (cambios desde el HUD).
-        const uint64_t version = shared_config.version.load(std::memory_order_relaxed);
-        if (version != seen_config_version) {
-            std::lock_guard<std::mutex> lock(shared_config.mtx);
-            cfg = shared_config.config;
-            seen_config_version = version;
-            bands_num_bars = -1; // fuerza reconstruir el mapa de bandas
+            sample_position = consumed;
         }
 
         const int sample_rate = audio.sample_rate.load();
         if (sample_rate <= 0) continue;
 
+        // Métricas en el dominio del tiempo sobre la ventana sin enventanar.
+        double sum_sq = 0.0;
+        float peak = 0.0f;
+        for (int n = 0; n < FFT_SIZE; ++n) {
+            const float x = raw[n];
+            sum_sq += static_cast<double>(x) * x;
+            peak = std::max(peak, std::fabs(x));
+            frame[n] = x * window.coefficients[n];
+        }
+
         fftwf_execute(plan);
-        for (int k = 0; k <= FFT_SIZE / 2; ++k) {
+
+        core::AnalysisFrame& out = vis.analysis.BeginWrite();
+        out.sequence = ++sequence;
+        out.sample_position = sample_position;
+        out.sample_rate = sample_rate;
+        out.fft_size = FFT_SIZE;
+        out.hop_size = HOP_SIZE;
+        out.rms = static_cast<float>(std::sqrt(sum_sq / FFT_SIZE));
+        out.peak = peak;
+
+        const float bin_hz = static_cast<float>(sample_rate) / FFT_SIZE;
+        double flux = 0.0, weighted = 0.0, total = 0.0;
+        for (int k = 0; k < SPECTRUM_BINS; ++k) {
             const float re = fft_out[k][0];
             const float im = fft_out[k][1];
-            magnitude[k] = std::sqrt(re * re + im * im) * window.normalization;
+            const float m = std::sqrt(re * re + im * im) * window.normalization;
+            out.magnitude[k] = m;
+            out.magnitude_db[k] = 20.0f * std::log10(m + 1e-9f);
+            out.phase[k] = std::atan2(im, re);
+            flux += std::max(0.0f, m - previous_magnitude[k]);
+            weighted += static_cast<double>(k) * bin_hz * m;
+            total += m;
+            previous_magnitude[k] = m;
         }
+        out.spectral_flux = static_cast<float>(flux);
+        out.spectral_centroid_hz = total > 0.0 ? static_cast<float>(weighted / total) : 0.0f;
+        std::copy(waveform.begin(), waveform.end(), out.mix_waveform.begin());
 
-        const int num_bars = std::max(1, vis.atomic_num_bars.load());
-        if (num_bars != bands_num_bars || sample_rate != bands_sample_rate) {
-            bands = BuildBandMap(num_bars, cfg, static_cast<double>(sample_rate) / FFT_SIZE, FFT_SIZE);
-            bands_num_bars = num_bars;
-            bands_sample_rate = sample_rate;
-        }
-
-        // Magnitud -> dB -> [0, 1] sobre el rango dinámico configurado.
-        const float range_db = std::max(1.0f, cfg.dynamic_range_db);
-        spectrum.resize(num_bars);
-        for (int i = 0; i < num_bars; ++i) {
-            const float m = SampleBand(magnitude, bands.lo[i], bands.hi[i]);
-            const float db = 20.0f * std::log10(m + 1e-9f);
-            spectrum[i] = std::clamp((db + range_db) / range_db, 0.0f, 1.0f);
-        }
-
-        {
-            std::lock_guard<std::mutex> lock(vis.mtx);
-            vis.spectrum.swap(spectrum);
-            vis.waveform = waveform;
-        }
-        vis.generation.fetch_add(1, std::memory_order_release);
+        vis.analysis.Publish();
     }
 
     fftwf_destroy_plan(plan);

@@ -99,7 +99,6 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\analysis\analysis_thread.cpp" />
-    <ClCompile Include="src\analysis\band_mapper.cpp" />
     <ClCompile Include="src\analysis\window_function.cpp" />
     <ClCompile Include="src\app\application.cpp" />
     <ClCompile Include="src\audio\capture_session.cpp" />
@@ -109,6 +108,7 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
     <ClCompile Include="src\core\config.cpp" />
     <ClCompile Include="src\core\types.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\render\bar_spectrum.cpp" />
     <ClCompile Include="src\render\data_textures.cpp" />
     <ClCompile Include="src\render\frame_limiter.cpp" />
     <ClCompile Include="src\render\fullscreen_quad.cpp" />
@@ -132,17 +132,19 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\analysis\analysis_thread.h" />
-    <ClInclude Include="src\analysis\band_mapper.h" />
     <ClInclude Include="src\analysis\window_function.h" />
     <ClInclude Include="src\app\application.h" />
     <ClInclude Include="src\audio\capture_session.h" />
     <ClInclude Include="src\audio\capture_thread.h" />
     <ClInclude Include="src\audio\device_enumerator.h" />
     <ClInclude Include="src\audio\sample_format.h" />
+    <ClInclude Include="src\core\analysis_frame.h" />
     <ClInclude Include="src\core\config.h" />
     <ClInclude Include="src\core\constants.h" />
     <ClInclude Include="src\core\shared_state.h" />
+    <ClInclude Include="src\core\triple_buffer.h" />
     <ClInclude Include="src\core\types.h" />
+    <ClInclude Include="src\render\bar_spectrum.h" />
     <ClInclude Include="src\render\data_textures.h" />
     <ClInclude Include="src\render\embedded_shaders.h" />
     <ClInclude Include="src\render\frame_limiter.h" />

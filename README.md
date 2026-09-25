@@ -123,6 +123,8 @@ audio-visualizer/
 |   |   |-- constants.h             FFT_SIZE, HOP_SIZE, RING_SIZE
 |   |   |-- types.*                 VisualizerMode, AudioDeviceInfo
 |   |   |-- shared_state.h          AudioData, VisualizerData (puntos de intercambio)
+|   |   |-- analysis_frame.h        AnalysisFrame: todo lo que el analisis extrae de una ventana
+|   |   |-- triple_buffer.h         Intercambio productor-consumidor sin bloqueos
 |   |   `-- config.*                VisualizerConfig, LoadConfig, SaveConfig
 |   |-- audio/                      Captura WASAPI
 |   |   |-- sample_format.*         Deteccion de formato y mezcla a mono
@@ -131,7 +133,6 @@ audio-visualizer/
 |   |   `-- capture_thread.*        COM, MMCSS, reintentos y cambio de dispositivo
 |   |-- analysis/                   Procesado de senal
 |   |   |-- window_function.*       Hann periodica y normalizacion
-|   |   |-- band_mapper.*           Bins a barras, lineal o logaritmico, interpolacion
 |   |   `-- analysis_thread.*       Ventana deslizante, FFT, dB, publicacion
 |   |-- render/                     OpenGL 3.3 Core
 |   |   |-- gl_window.*             Ventana GLFW, GLEW, refresco del monitor
@@ -139,6 +140,7 @@ audio-visualizer/
 |   |   |-- embedded_shaders.h      Copias de shaders/ para arrancar sin la carpeta
 |   |   |-- fullscreen_quad.*       Quad compartido por los modos procedurales
 |   |   |-- data_textures.*         Texturas de espectro, onda y cascada
+|   |   |-- bar_spectrum.*          Bins a barras, lineal o logaritmico, dB a [0, 1]
 |   |   |-- spectrum_dynamics.*     Ataque, caida y peak-hold por tiempo real
 |   |   |-- frame_limiter.*         Limitador adaptativo cuando el driver ignora vsync
 |   |   |-- renderer.*              Bucle principal de render
@@ -230,7 +232,7 @@ La versión 2.0 reduce el análisis a un vector de alturas de barra. La 3.0 prop
 - **Osciloscopio apilado**, medidores por banda, dinámica de ataque y caída por banda, y detección de golpes por flujo espectral.
 - **Diseño Fluent.** Panel con material acrílico propio (desenfoque, tinte, exclusión, ruido), materiales Mica y Acrílico del sistema en Windows 11, transiciones con curvas de aceleración y contraste mínimo 4,5:1. Documento 12.
 
-Estado: solo documentación. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
+Estado: la fase A está implementada (trama de análisis `AnalysisFrame` con triple búfer, mapeo a barras en el render). El resto es documentación. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
 
 ---
 

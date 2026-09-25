@@ -23,6 +23,7 @@ struct HudContext {
     core::VisualizerData& vis;
     core::AudioData& audio;
     const Telemetry& telemetry;
+    const core::AnalysisFrame& frame;     // última trama de análisis, para la pestaña de telemetría
     double now;
 };
 

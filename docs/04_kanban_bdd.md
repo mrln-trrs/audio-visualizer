@@ -146,7 +146,9 @@ El sprint de desarrollo queda listo para comenzar cuando:
 ### Épica 5: Trama de Análisis y Bandas Configurables (Fase 5, propuesta 3.0)
 **Objetivo**: Sustituir el vector de alturas por una trama de análisis completa y permitir al usuario particionar el espectro en bandas nombradas con dinámica propia. Diseño en el documento 11, secciones 3 a 7.
 
-#### Historia 5.1: `AnalysisFrame` y triple búfer
+#### Historia 5.1: `AnalysisFrame` y triple búfer (completada)
+
+Verificación: MSBuild y CMake sin avisos; los cuatro modos equivalentes por captura de pantalla; hilo de análisis al 0,5 % de un núcleo medido con 100 tramas por segundo; el consumidor lee `sequence` estrictamente creciente por construcción del triple búfer.
 - **Como**: Desarrollador de renderizadores.
 - **Quiero**: Recibir por cuadro magnitud, fase, dB, RMS, pico y flujo espectral sin copias ni bloqueos.
 - **Para**: Escribir modos nuevos sin tocar el análisis.

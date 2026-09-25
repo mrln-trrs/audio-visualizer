@@ -23,6 +23,9 @@ static_assert((RING_SIZE & (RING_SIZE - 1)) == 0, "RING_SIZE debe ser potencia d
 static_assert(FFT_SIZE % HOP_SIZE == 0 && FFT_SIZE / HOP_SIZE >= 4,
               "FFT_SIZE / HOP_SIZE debe ser entero y al menos 4 (condicion de solapamiento constante)");
 
+// Bins de la FFT real a compleja: k = 0 .. N/2.
+constexpr int SPECTRUM_BINS = FFT_SIZE / 2 + 1;
+
 // Muestras crudas publicadas para el osciloscopio.
 constexpr int WAVEFORM_SNAPSHOT_SIZE = 1024;
 

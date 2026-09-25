@@ -9,9 +9,11 @@
 
 #include "core/constants.h"
 #include "core/types.h"
+#include "core/analysis_frame.h"
+#include "core/triple_buffer.h"
 
 // Estructuras compartidas entre hilos. La tabla de quién escribe y quién lee cada campo
-// está en docs/05_architecture_and_pipeline.md, sección 1.
+// está en docs/05_architecture_and_pipeline.md, sección 1, y docs/11, sección 5.
 namespace core {
 
 // Punto de intercambio 1: captura -> análisis.
@@ -26,17 +28,11 @@ struct AudioData {
     std::atomic<int> sample_rate{ 0 };
 };
 
-// Punto de intercambio 2: análisis -> render, más el control de dispositivos.
+// Punto de intercambio 2: análisis -> render, más el control de dispositivos y el cierre.
 struct VisualizerData {
-    std::mutex mtx;
-    // Último espectro publicado: un valor en [0, 1] por barra.
-    std::vector<float> spectrum;
-    // Última forma de onda publicada en el dominio del tiempo, en [-1, 1].
-    std::vector<float> waveform;
-    // Se incrementa en cada publicación. El render solo copia si ha cambiado.
-    std::atomic<uint64_t> generation{ 0 };
-    // Número de barras que quiere el render (ancho del framebuffer en píxeles).
-    std::atomic<int> atomic_num_bars{ 1024 };
+    // Tramas de análisis. Productor: hilo de análisis. Consumidor: hilo de render.
+    TripleBuffer<AnalysisFrame> analysis;
+
     // Bandera global de cierre. Se pone a true con AudioData::mtx tomado.
     std::atomic<bool> should_terminate{ false };
 

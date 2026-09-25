@@ -180,7 +180,7 @@ Cada barra dispone de un indicador de pico $p_i$ y un temporizador de sostenimie
 
 ## 5. Extensión a la Descomposición en Bandas (Propuesta 3.0)
 
-El pipeline de esta versión termina en la sección 2.6 con un vector de valores en $[0,1]$. La versión 3.0 conserva las secciones 2.1 a 2.4 sin cambios y sustituye 2.5 y 2.6 por una trama de análisis completa. La justificación matemática de que la señal puede separarse en bandas y reconstruirse exactamente, cuánta información produce y qué límite impone el principio de incertidumbre está en [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md). La arquitectura (estructuras, hilos, texturas, configuración) está en [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md).
+El pipeline original terminaba en la sección 2.6 con un vector de valores en $[0,1]$. Desde la fase A de la 3.0 el hilo de análisis publica una trama completa (`core::AnalysisFrame`: magnitud lineal, dB, fase, RMS, pico, flujo espectral, centroide y mezcla) a través de un triple búfer sin bloqueos (`core::TripleBuffer`), y el mapeo de bins a barras con su normalización lo hace el render en `BarSpectrum`. Las secciones 2.5 y 2.6 describen por tanto trabajo del render, no del análisis. La versión 3.0 conserva las secciones 2.1 a 2.4 sin cambios y sustituye 2.5 y 2.6 por una trama de análisis completa. La justificación matemática de que la señal puede separarse en bandas y reconstruirse exactamente, cuánta información produce y qué límite impone el principio de incertidumbre está en [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md). La arquitectura (estructuras, hilos, texturas, configuración) está en [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md).
 
 Correspondencia entre este documento y la extensión:
 
@@ -190,8 +190,8 @@ Correspondencia entre este documento y la extensión:
 | 2.2 Anillo y salto | Sí | No |
 | 2.3 Ventana de Hann | Sí, ya periódica | No |
 | 2.4 FFT r2c | Sí | Se conserva la fase además de la magnitud |
-| 2.5 Mapeo a barras | Pasa al renderizador de barras | El procesado publica bins y bandas, no píxeles |
-| 2.6 Escala dB | Sí | Se publica dB sin normalizar y la normalización es por renderizador |
+| 2.5 Mapeo a barras | Ya en el render (`src/render/bar_spectrum.cpp`) | El análisis publica bins, no píxeles (hecho en la fase A) |
+| 2.6 Escala dB | Sí | El análisis publica dB sin normalizar (`magnitude_db`); la normalización a [0, 1] la hace el render (hecho en la fase A) |
 | 3.1 Filtro IIR | Sí | Constantes por banda en lugar de globales |
 | 3.2 Peak-hold | Sí | Sin cambios |
 | 4 Shaders | Sí | Se añaden osciloscopio apilado, medidores por banda y Lissajous |

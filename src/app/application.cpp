@@ -35,7 +35,7 @@ int Run() {
     }
 
     std::thread capture(audio::CaptureThread, std::ref(audio), std::ref(vis));
-    std::thread analysis(analysis::AnalysisThread, std::ref(audio), std::ref(vis), std::ref(config));
+    std::thread analysis(analysis::AnalysisThread, std::ref(audio), std::ref(vis));
 
     // El render corre en este hilo hasta que se cierra la ventana.
     render::RenderThread(vis, config, audio);
