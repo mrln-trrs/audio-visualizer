@@ -27,7 +27,8 @@ Este documento proporciona una guía exhaustiva para el usuario final sobre la o
 | **`2`** | Modo Radial | Activa el espectro circular procedural con pulso reactivo en el centro. |
 | **`3`** | Modo Osciloscopio | Activa la forma de onda continua en el dominio del tiempo estilo tubo analógico CRT. |
 | **`4`** | Modo Cascada 2D | Activa el espectrograma continuo con mapa de calor térmico (*Waterfall*). |
-| **`6`** | Modo Medidores por Banda | Una columna por banda configurada, con nombre, rango en Hz, nivel en dB, marcador de pico y color propio. La tecla `5` queda reservada al osciloscopio apilado (fase C). |
+| **`5`** | Modo Osciloscopio Apilado | Una traza por banda reconstruida y, debajo, la mezcla original. La suma de las trazas es exactamente la mezcla. Hasta 32 bandas; con más, el modo lo indica y no reconstruye. |
+| **`6`** | Modo Medidores por Banda | Una columna por banda configurada, con nombre, rango en Hz, nivel en dB, marcador de pico y color propio. |
 | **`Alt + F4`** | Salir | Cierra limpiamente la aplicación y libera todos los recursos. |
 
 ---
@@ -197,7 +198,7 @@ Cada banda tiene su propio ataque, caída, ganancia, nombre y color, editables e
 
 | Tecla | Modo | Qué muestra |
 |---|---|---|
-| `5` | Osciloscopio apilado (fase C, pendiente) | Una traza por banda, con su color, y debajo la mezcla. La suma de las trazas es exactamente la mezcla |
+| `5` | Osciloscopio apilado (disponible) | Una traza por banda, con su color, y debajo la mezcla. La suma de las trazas es exactamente la mezcla. Ventana de 85 ms a 48 kHz |
 | `6` | Medidores por banda (disponible) | Una columna por banda con nombre, rango, nivel en dB, pico y color |
 
 ### 6.3 Claves de configuración

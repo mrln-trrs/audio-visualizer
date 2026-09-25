@@ -5,6 +5,7 @@
 #include "core/config.h"
 #include "core/band_layout.h"
 #include "render/data_textures.h"
+#include "render/band_waveform_texture.h"
 #include "render/spectrum_dynamics.h"
 #include "render/fullscreen_quad.h"
 
@@ -23,6 +24,7 @@ struct RenderContext {
     const FullscreenQuad& quad;
     const core::BandLayout& bands;        // partición actual del espectro
     const SpectrumDynamics& band_dynamics;// niveles y picos por banda, animados
+    const BandWaveformTexture& band_waves;// historial de ondas por banda (fase C)
 };
 
 class IVisualMode {
@@ -37,6 +39,9 @@ public:
     virtual void DrawOverlay(const RenderContext&) {}
     virtual void Shutdown() = 0;
     virtual const char* Name() const = 0;
+    // True si el modo necesita que el análisis reconstruya las ondas por banda (coste: una IFFT
+    // por banda y trama). El render solo lo pide al análisis mientras un modo así está activo.
+    virtual bool NeedsBandWaveforms() const { return false; }
 };
 
 // Lee un color RGB de un vector de configuración, con valores por defecto si no tiene 3 componentes.

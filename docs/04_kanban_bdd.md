@@ -199,7 +199,9 @@ Implementación: `SpectrumDynamics::Update` con constantes por elemento; las bar
 ### Épica 6: Reconstrucción de Ondas y Osciloscopio Apilado (Fase 6, propuesta 3.0)
 **Objetivo**: Reconstruir la onda de cada banda por IFFT enmascarada y mostrarlas apiladas con la mezcla. Base: documento 10, sección 4; diseño: documento 11, secciones 5.3, 6 y 8.
 
-#### Historia 6.1: Reconstrucción exacta
+#### Historia 6.1: Reconstrucción exacta (completada)
+
+Verificación: `tests/band_synthesis_test.cpp` (objetivo `band_synthesis_test`). Error máximo de la suma de bandas frente a la mezcla: $2{,}6 \cdot 10^{-7}$ sobre 44 032 muestras. Resultados completos en el documento 11, fase C.
 - **Como**: Usuario.
 - **Quiero**: Que la suma de las ondas de banda sea la señal original.
 - **Para**: Confiar en que lo que veo por bandas es una descomposición real y no un efecto.
@@ -213,7 +215,9 @@ Implementación: `SpectrumDynamics::Update` con constantes por elemento; las bar
     - **When** se mueve un corte de banda
     - **Then** las trazas cambian de forma en la siguiente trama sin picos espurios ni discontinuidades de más de 43 ms.
 
-#### Historia 6.2: Osciloscopio apilado
+#### Historia 6.2: Osciloscopio apilado (completada)
+
+Implementación: `StackedOscilloscopeMode` con `shaders/stacked.frag`; reducción por mínimo y máximo con seis muestras por píxel; alineación garantizada porque todas las filas, incluida la mezcla, salen del mismo bloque de `hop_size` muestras de la misma trama. Verificado visualmente a 144 fps.
 - **Como**: Usuario.
 - **Quiero**: Ver $K$ trazas, una por banda, y la mezcla debajo, como en un osciloscopio multicanal.
 - **Para**: Observar cómo contribuye cada rango al sonido total.

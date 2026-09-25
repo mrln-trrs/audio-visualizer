@@ -35,6 +35,7 @@ void TabModes(HudContext& ctx) {
         { "2. Radial / Circular (Anillo Reactivo)", core::MODE_RADIAL, "Mapeo polar en anillo con nucleo pulsante al ritmo de los graves." },
         { "3. Osciloscopio / Forma de Onda", core::MODE_WAVEFORM, "Muestras crudas de audio en tiempo real con haz tipo CRT." },
         { "4. Espectrograma Cascada 2D (Waterfall)", core::MODE_WATERFALL, "Historial de frecuencias desplazandose hacia abajo con paleta termica." },
+        { "5. Osciloscopio Apilado por Bandas", core::MODE_STACKED_OSCILLOSCOPE, "Una traza por banda reconstruida por IFFT enmascarada y, debajo, la mezcla. La suma de las trazas es exactamente la mezcla. Maximo 32 bandas." },
         { "6. Medidores por Banda", core::MODE_BAND_METERS, "Una columna por banda configurada, con nombre, rango, nivel en dB y pico." },
     };
     for (const auto& e : entries) {

@@ -9,6 +9,7 @@ const char* VisualizerModeName(int mode) {
     case MODE_WAVEFORM: return "Osciloscopio";
     case MODE_WATERFALL: return "Cascada";
     case MODE_BAND_METERS: return "Medidores";
+    case MODE_STACKED_OSCILLOSCOPE: return "Osciloscopio apilado";
     default: return "Desconocido";
     }
 }

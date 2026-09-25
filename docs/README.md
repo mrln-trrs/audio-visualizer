@@ -93,12 +93,12 @@ flowchart TD
 | 01 PRD | Mixto: 2.0 implementada, hoja de ruta 3.0 propuesta | 2.0 y 3.0 |
 | 02 Especificación técnica | Mixto | 2.0 y 3.0 |
 | 03 UX Flows | Mixto | 2.0 y 3.0 |
-| 04 Kanban y BDD | Mixto: épicas 1 a 5 completadas, 6 y 7 propuestas | 2.0 y 3.0 |
+| 04 Kanban y BDD | Mixto: épicas 1 a 6 completadas, 7 propuesta | 2.0 y 3.0 |
 | 05 Arquitectura y pipeline | Implementado, con nota sobre la ventana periódica | 2.0 |
 | 06 Compilación | Implementado | 2.0 |
 | 07 Manual de usuario | Implementado, con sección de funciones previstas | 2.0 |
 | 08 Contribución | Implementado | 2.0 |
 | 09 Recomendaciones | Propuesta | 3.0 |
 | 10 Teoría de descomposición | Propuesta | 3.0 |
-| 11 Arquitectura de análisis | Mixto: fases A y B implementadas, C y D propuestas | 3.0 |
+| 11 Arquitectura de análisis | Mixto: fases A, B y C implementadas, D propuesta | 3.0 |
 | 12 Diseño Fluent | Propuesta | 3.0 |

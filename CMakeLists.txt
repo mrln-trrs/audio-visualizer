@@ -49,6 +49,7 @@ target_include_directories(imgui_lib PUBLIC
 set(PROJECT_SOURCES
     src/analysis/analysis_thread.cpp
     src/analysis/band_metrics.cpp
+    src/analysis/band_synthesizer.cpp
     src/analysis/window_function.cpp
     src/app/application.cpp
     src/audio/capture_session.cpp
@@ -59,6 +60,7 @@ set(PROJECT_SOURCES
     src/core/config.cpp
     src/core/types.cpp
     src/main.cpp
+    src/render/band_waveform_texture.cpp
     src/render/bar_spectrum.cpp
     src/render/data_textures.cpp
     src/render/frame_limiter.cpp
@@ -67,6 +69,7 @@ set(PROJECT_SOURCES
     src/render/modes/band_meters_mode.cpp
     src/render/modes/bars_mode.cpp
     src/render/modes/radial_mode.cpp
+    src/render/modes/stacked_oscilloscope_mode.cpp
     src/render/modes/waterfall_mode.cpp
     src/render/modes/waveform_mode.cpp
     src/render/renderer.cpp
@@ -77,6 +80,7 @@ set(PROJECT_SOURCES
     src/ui/theme.cpp
     src/analysis/analysis_thread.h
     src/analysis/band_metrics.h
+    src/analysis/band_synthesizer.h
     src/analysis/window_function.h
     src/app/application.h
     src/audio/capture_session.h
@@ -90,6 +94,7 @@ set(PROJECT_SOURCES
     src/core/shared_state.h
     src/core/triple_buffer.h
     src/core/types.h
+    src/render/band_waveform_texture.h
     src/render/bar_spectrum.h
     src/render/data_textures.h
     src/render/embedded_shaders.h
@@ -99,6 +104,7 @@ set(PROJECT_SOURCES
     src/render/modes/band_meters_mode.h
     src/render/modes/bars_mode.h
     src/render/modes/radial_mode.h
+    src/render/modes/stacked_oscilloscope_mode.h
     src/render/modes/visual_mode.h
     src/render/modes/waterfall_mode.h
     src/render/modes/waveform_mode.h
@@ -166,6 +172,22 @@ endif()
 add_custom_command(TARGET band_metrics_test POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${FFTW_DIR}/libfftw3f-3.dll" "$<TARGET_FILE_DIR:band_metrics_test>/libfftw3f-3.dll")
 add_test(NAME band_metrics COMMAND band_metrics_test)
+
+add_executable(band_synthesis_test
+    tests/band_synthesis_test.cpp
+    src/core/band_layout.cpp
+    src/analysis/window_function.cpp
+    src/analysis/band_synthesizer.cpp
+)
+target_include_directories(band_synthesis_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${FFTW_DIR})
+target_link_directories(band_synthesis_test PRIVATE ${FFTW_DIR})
+target_link_libraries(band_synthesis_test PRIVATE libfftw3f-3.lib)
+if(MSVC)
+    target_compile_options(band_synthesis_test PRIVATE /W4 /utf-8 /EHsc /permissive-)
+endif()
+add_custom_command(TARGET band_synthesis_test POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${FFTW_DIR}/libfftw3f-3.dll" "$<TARGET_FILE_DIR:band_synthesis_test>/libfftw3f-3.dll")
+add_test(NAME band_synthesis COMMAND band_synthesis_test)
 
 # -----------------------------------------------------------------------------
 # Post-build: DLL, shaders y config.json junto al ejecutable

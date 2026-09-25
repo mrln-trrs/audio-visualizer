@@ -110,7 +110,7 @@ stateDiagram-v2
 
 | Tecla | Función | Fuente de datos |
 |---|---|---|
-| `5` | Osciloscopio apilado por bandas, con la mezcla debajo | Ondas por banda (documento 11, sección 8) |
+| `5` | Osciloscopio apilado por bandas, con la mezcla debajo (implementado en la fase C) | Ondas por banda (documento 11, sección 8) |
 | `6` | Medidores de energía por banda con marcador de pico (implementado en la fase B) | Estado por banda |
 | `F11` | Pantalla completa sin bordes | Ya previsto en la 2.0, pendiente |
 | `Ctrl+B` | Abrir directamente la pestaña de bandas del HUD | HUD |

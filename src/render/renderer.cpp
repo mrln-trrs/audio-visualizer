@@ -26,6 +26,8 @@
 #include "render/modes/waveform_mode.h"
 #include "render/modes/waterfall_mode.h"
 #include "render/modes/band_meters_mode.h"
+#include "render/modes/stacked_oscilloscope_mode.h"
+#include "render/band_waveform_texture.h"
 #include "ui/theme.h"
 #include "ui/telemetry.h"
 #include "ui/hud.h"
@@ -33,8 +35,7 @@
 namespace render {
 namespace {
 
-// Atajos de teclado: Tab o H alternan el HUD; 1 a 4 y 6 cambian de modo (5 queda reservada
-// para el osciloscopio apilado de la fase C).
+// Atajos de teclado: Tab o H alternan el HUD; 1 a 6 cambian de modo.
 class KeyboardShortcuts {
 public:
     void Poll(GLFWwindow* window, ui::HudState& hud, core::VisualizerConfig& cfg) {
@@ -45,10 +46,10 @@ public:
         tab_prev_ = tab;
         h_prev_ = h;
 
-        static const std::array<std::pair<int, int>, 5> kModeKeys = { {
+        static const std::array<std::pair<int, int>, 6> kModeKeys = { {
             { GLFW_KEY_1, core::MODE_BARS }, { GLFW_KEY_2, core::MODE_RADIAL },
             { GLFW_KEY_3, core::MODE_WAVEFORM }, { GLFW_KEY_4, core::MODE_WATERFALL },
-            { GLFW_KEY_6, core::MODE_BAND_METERS } } };
+            { GLFW_KEY_5, core::MODE_STACKED_OSCILLOSCOPE }, { GLFW_KEY_6, core::MODE_BAND_METERS } } };
         for (const auto& [key, mode] : kModeKeys) {
             if (glfwGetKey(window, key) == GLFW_PRESS) cfg.visual_mode = mode;
         }
@@ -146,6 +147,8 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
     SpectrumDynamics band_dynamics;
     BandLayoutMirror bands;
     std::vector<float> band_levels;
+    BandWaveformTexture band_waves;
+    band_waves.Init();
 
     std::array<std::unique_ptr<IVisualMode>, core::MODE_COUNT> modes;
     modes[core::MODE_BARS] = std::make_unique<BarsMode>();
@@ -153,6 +156,7 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
     modes[core::MODE_WAVEFORM] = std::make_unique<WaveformMode>();
     modes[core::MODE_WATERFALL] = std::make_unique<WaterfallMode>();
     modes[core::MODE_BAND_METERS] = std::make_unique<BandMetersMode>();
+    modes[core::MODE_STACKED_OSCILLOSCOPE] = std::make_unique<StackedOscilloscopeMode>();
     for (auto& mode : modes) {
         if (!mode->Init()) std::cerr << "Render: el modo " << mode->Name() << " no pudo inicializarse." << std::endl;
     }
@@ -180,6 +184,10 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
         last_time = now;
 
         keys.Poll(window, hud, cfg);
+
+        // Pedir al análisis las ondas por banda solo mientras un modo que las usa está activo.
+        const int mode_index = std::clamp(cfg.visual_mode, 0, static_cast<int>(core::MODE_COUNT) - 1);
+        vis.band_waveforms_requested.store(modes[mode_index]->NeedsBandWaveforms(), std::memory_order_relaxed);
 
         // Última trama de análisis, sin bloqueo ni copia.
         const core::AnalysisFrame& frame = vis.analysis.Read();
@@ -219,14 +227,14 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
         if (has_new_frame) {
             textures.UploadWaveform(frame.mix_waveform);
             textures.PushWaterfallRow(bar_spectrum.values(), cfg.amplitude_factor);
+            if (frame.band_waveform_valid) band_waves.Append(frame);
         }
 
         glViewport(0, 0, fbw, fbh);
         glClearColor(0.06f, 0.06f, 0.08f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        const int mode_index = std::clamp(cfg.visual_mode, 0, static_cast<int>(core::MODE_COUNT) - 1);
-        const RenderContext ctx{ fbw, fbh, now, num_bars, cfg, textures, dynamics, quad, bands.layout(), band_dynamics };
+        const RenderContext ctx{ fbw, fbh, now, num_bars, cfg, textures, dynamics, quad, bands.layout(), band_dynamics, band_waves };
         modes[mode_index]->Render(ctx);
 
         // Interfaz.
@@ -267,6 +275,7 @@ void RenderThread(core::VisualizerData& vis, core::SharedConfigData& shared_conf
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
     for (auto& mode : modes) mode->Shutdown();
+    band_waves.Shutdown();
     textures.Shutdown();
     quad.Shutdown();
     glfwDestroyWindow(window);

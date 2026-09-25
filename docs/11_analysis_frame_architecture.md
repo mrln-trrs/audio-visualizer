@@ -1,6 +1,6 @@
 # Arquitectura de la Capa de Análisis y Descomposición en Bandas - Audio Visualizer 3.0
 
-> **Estado:** Mixto. Las fases A (trama de análisis, triple búfer) y B (bandas configurables, métricas y dinámica por banda, medidores) están implementadas y verificadas. Las fases C y D siguen siendo propuesta.  
+> **Estado:** Mixto. Las fases A (trama de análisis, triple búfer), B (bandas configurables, métricas y dinámica por banda, medidores) y C (ondas por banda por IFFT enmascarada, osciloscopio apilado) están implementadas y verificadas. La fase D (resolución variable) sigue siendo propuesta.  
 > **Alcance:** Arquitectura de la capa de análisis: estructuras de datos, hilos, texturas, configuración, presupuesto y plan por fases. La base matemática está en el documento 10.  
 > **Documentos relacionados:** [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md), [04_kanban_bdd.md](04_kanban_bdd.md), [07_user_manual_and_config.md](07_user_manual_and_config.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
@@ -33,7 +33,7 @@ Esto convierte cada visualización nueva en un shader más, sin modificar el an�
 | Salida del procesado | `AnalysisFrame` con magnitud, dB, fase, RMS, pico, flujo, centroide y mezcla (fase A, implementada) | Faltan los campos por banda (fase B) |
 | Forma de onda | Últimas 1024 muestras crudas | Solo la mezcla; no hay ondas por banda |
 | Dinámica | Por banda; las barras heredan la de su banda si `bars_inherit_dynamics` (fase B, implementada) | |
-| Bandas | Configurables (octavas, lineal, manual, por bin) con nombre, color, ataque, caída y ganancia; métricas por banda en la trama (fase B, implementada) | Faltan las ondas por banda (fase C) |
+| Bandas | Configurables (octavas, lineal, manual, por bin) con nombre, color, ataque, caída y ganancia; métricas y ondas por banda en la trama (fases B y C, implementadas) | Resolución variable (fase D) |
 | Historial | Solo en la textura del espectrograma, ya cuantizado | No reutilizable por otros modos |
 | Ventana | Hann periódica (denominador $N$), en `src/analysis/window_function.cpp` | Ya cumple la condición de la teoría, sección 4.2; sin trabajo pendiente |
 
@@ -286,7 +286,27 @@ Resultados de la prueba numérica en la máquina de referencia (senoidal de 100 
 - Dinámica por banda de la sección 7. Medidores de banda como nuevo modo.
 - **Criterio.** Dado el preset de siete bandas, cuando suena una senoidal de 100 Hz a -6 dBFS, entonces la banda "Bajo" concentra más del 99 % de la energía, su pico difiere del valor teórico en menos que la pérdida máxima de festoneado de la ventana (1,42 dB para Hann), la fuga a bandas no contiguas queda 40 dB por debajo, y la suma de energías de todas las bandas más la banda "resto" iguala la energía total con error relativo menor que $10^{-4}$ (Parseval). El criterio original de 0,5 dB era incorrecto: no tenía en cuenta el festoneado.
 
-### Fase C. Reconstrucción y osciloscopio apilado
+### Fase C. Reconstrucción y osciloscopio apilado (implementada)
+
+Estado: completada. Archivos: `src/analysis/band_synthesizer.*` (máscaras de coseno alzado complementarias, banda implícita "resto", IFFT `c2r` por fila, ventana de síntesis, solapamiento y suma con normalización por $\sum_m w^2$), `src/render/band_waveform_texture.*` (historial circular en GPU de 4096 muestras por fila), `src/render/modes/stacked_oscilloscope_mode.*` y `shaders/stacked.frag` (modo 6, tecla 5, reducción por mínimo y máximo con seis muestras por píxel), prueba en `tests/band_synthesis_test.cpp`.
+
+El análisis solo paga las IFFT mientras un modo que las necesita está activo (`IVisualMode::NeedsBandWaveforms`, bandera `band_waveforms_requested`) y con 32 bandas como máximo (`MAX_WAVEFORM_BANDS`). La trama publica las `hop_size` muestras más antiguas de la ventana, que ya recibieron todas las contribuciones, junto con las mismas muestras de la mezcla para poder comprobar la suma.
+
+Resultados de la prueba numérica (tres tonos a 100, 1000 y 5000 Hz de amplitudes 0,5, 0,3 y 0,2 más ruido de 0,05; un segundo a 48 kHz; preset de siete bandas; rampa de 1,5 bins):
+
+| Comprobación | Resultado | Criterio |
+|---|---|---|
+| $\sum_b M_b[k]$ incluida la máscara del resto | error máximo 0 | menor que $10^{-6}$ |
+| $\sum_b y_b[n] = x[n]$ sobre 44 032 muestras tras el arranque | error máximo $2{,}6 \cdot 10^{-7}$ | menor que $10^{-5}$ |
+| RMS de "Bajo" con el tono de 100 Hz | 0,342 frente a 0,354 teórico | 5 % |
+| RMS de "Medios" con el tono de 1000 Hz | 0,2123 frente a 0,2121 | 5 % |
+| RMS de "Presencia" con el tono de 5000 Hz | 0,1417 frente a 0,1414 | 5 % |
+| RMS de la fila "resto" | 0,012 | menor que 0,02 |
+
+El déficit del 3 % en "Bajo" es la parte del lóbulo principal del tono de 100 Hz (bin 4,27) que la rampa de 1,5 bins en el borde de 60 Hz (bin 3) asigna a "Sub". Es el comportamiento previsto en la teoría, sección 4.4: la rampa reparte, no pierde; la suma total sigue siendo exacta.
+
+Medido en la máquina de referencia con el modo apilado activo y siete bandas: hilo de análisis al 2,2 % de un núcleo (ocho IFFT de 2048 por trama a 100 tramas por segundo), frente al 0,3 % sin reconstrucción; 144 fps sostenidos.
+
 
 - IFFT enmascarada por banda con solapamiento, rampas de coseno alzado, historial circular.
 - Modo osciloscopio apilado con reducción por mínimo y máximo.

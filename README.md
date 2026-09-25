@@ -98,6 +98,7 @@ El repositorio cuenta con una suite documental estructurada en la carpeta [`docs
 | `2` | Activar Modo 2: **Radial / Circular** |
 | `3` | Activar Modo 3: **Osciloscopio / Waveform** |
 | `4` | Activar Modo 4: **Espectrograma Cascada (Waterfall)** |
+| `5` | Activar Modo 6: **Osciloscopio Apilado** (una traza por banda reconstruida y la mezcla debajo; la suma de las trazas es la mezcla) |
 | `6` | Activar Modo 5: **Medidores por Banda** (nombre, rango, nivel en dB, pico y color por banda) |
 
 ---
@@ -111,6 +112,7 @@ audio-visualizer/
 |-- config.json                     Configuración inicial en tiempo de ejecución
 |-- docs/                           Documentación formal (PRD, Tech Spec, UX Flows, Kanban)
 |-- tests/band_metrics_test.cpp     Prueba numerica de bandas y Parseval (objetivo CMake)
+|-- tests/band_synthesis_test.cpp   Prueba numerica de la reconstruccion y la suma de bandas
 |-- shaders/                        Shaders GLSL (Modern OpenGL 3.3 Core)
 |   |-- bars.vert / bars.frag       Shader para barras y marcadores de pico
 |   |-- quad.vert                   Vertex shader común para modos de pantalla completa
@@ -137,6 +139,7 @@ audio-visualizer/
 |   |-- analysis/                   Procesado de senal
 |   |   |-- window_function.*       Hann periodica y normalizacion
 |   |   |-- band_metrics.*          Energia, RMS y pico por banda
+|   |   |-- band_synthesizer.*      Ondas por banda: IFFT enmascarada, solapamiento y suma
 |   |   `-- analysis_thread.*       Ventana deslizante, FFT, dB, publicacion
 |   |-- render/                     OpenGL 3.3 Core
 |   |   |-- gl_window.*             Ventana GLFW, GLEW, refresco del monitor
@@ -144,6 +147,7 @@ audio-visualizer/
 |   |   |-- embedded_shaders.h      Copias de shaders/ para arrancar sin la carpeta
 |   |   |-- fullscreen_quad.*       Quad compartido por los modos procedurales
 |   |   |-- data_textures.*         Texturas de espectro, onda y cascada
+|   |   |-- band_waveform_texture.*  Historial circular en GPU de las ondas por banda
 |   |   |-- bar_spectrum.*          Bins a barras, lineal o logaritmico, dB a [0, 1]
 |   |   |-- spectrum_dynamics.*     Ataque, caida y peak-hold por tiempo real
 |   |   |-- frame_limiter.*         Limitador adaptativo cuando el driver ignora vsync
@@ -154,7 +158,8 @@ audio-visualizer/
 |   |       |-- radial_mode.*       2. Radial
 |   |       |-- waveform_mode.*     3. Osciloscopio
 |   |       |-- waterfall_mode.*    4. Cascada
-|   |       `-- band_meters_mode.*  5. Medidores por banda (tecla 6)
+|   |       |-- band_meters_mode.*  5. Medidores por banda (tecla 6)
+|   |       `-- stacked_oscilloscope_mode.*  6. Osciloscopio apilado (tecla 5)
 |   `-- ui/                         Dear ImGui
 |       |-- theme.*                 Estilo y HelpMarker
 |       |-- telemetry.*             Metricas y titulo de la ventana
@@ -237,7 +242,7 @@ La versión 2.0 reduce el análisis a un vector de alturas de barra. La 3.0 prop
 - **Osciloscopio apilado**, medidores por banda, dinámica de ataque y caída por banda, y detección de golpes por flujo espectral.
 - **Diseño Fluent.** Panel con material acrílico propio (desenfoque, tinte, exclusión, ruido), materiales Mica y Acrílico del sistema en Windows 11, transiciones con curvas de aceleración y contraste mínimo 4,5:1. Documento 12.
 
-Estado: fases A y B implementadas (trama de análisis con triple búfer; bandas configurables con métricas, dinámica por banda y modo de medidores, tecla `6`). Las fases C (ondas por banda y osciloscopio apilado) y D (resolución variable) y el diseño Fluent son documentación. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
+Estado: fases A, B y C implementadas (trama de análisis con triple búfer; bandas configurables con métricas, dinámica por banda y medidores, tecla `6`; ondas por banda reconstruidas por IFFT enmascarada y osciloscopio apilado, tecla `5`). La fase D (resolución variable) y el diseño Fluent son documentación. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
 
 ---
 

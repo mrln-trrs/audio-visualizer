@@ -33,6 +33,10 @@ struct VisualizerData {
     // Tramas de análisis. Productor: hilo de análisis. Consumidor: hilo de render.
     TripleBuffer<AnalysisFrame> analysis;
 
+    // El render lo activa cuando algún modo visible necesita las ondas por banda (fase C). El
+    // análisis solo paga las IFFT cuando es true y el número de bandas es razonable.
+    std::atomic<bool> band_waveforms_requested{ false };
+
     // Bandera global de cierre. Se pone a true con AudioData::mtx tomado.
     std::atomic<bool> should_terminate{ false };
 

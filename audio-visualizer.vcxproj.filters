@@ -42,6 +42,9 @@
     <ClCompile Include="src\analysis\band_metrics.cpp">
       <Filter>Fuentes\analysis</Filter>
     </ClCompile>
+    <ClCompile Include="src\analysis\band_synthesizer.cpp">
+      <Filter>Fuentes\analysis</Filter>
+    </ClCompile>
     <ClCompile Include="src\analysis\window_function.cpp">
       <Filter>Fuentes\analysis</Filter>
     </ClCompile>
@@ -72,6 +75,9 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Fuentes</Filter>
     </ClCompile>
+    <ClCompile Include="src\render\band_waveform_texture.cpp">
+      <Filter>Fuentes\render</Filter>
+    </ClCompile>
     <ClCompile Include="src\render\bar_spectrum.cpp">
       <Filter>Fuentes\render</Filter>
     </ClCompile>
@@ -94,6 +100,9 @@
       <Filter>Fuentes\render\modes</Filter>
     </ClCompile>
     <ClCompile Include="src\render\modes\radial_mode.cpp">
+      <Filter>Fuentes\render\modes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\modes\stacked_oscilloscope_mode.cpp">
       <Filter>Fuentes\render\modes</Filter>
     </ClCompile>
     <ClCompile Include="src\render\modes\waterfall_mode.cpp">
@@ -146,6 +155,9 @@
     <ClInclude Include="src\analysis\band_metrics.h">
       <Filter>Fuentes\analysis</Filter>
     </ClInclude>
+    <ClInclude Include="src\analysis\band_synthesizer.h">
+      <Filter>Fuentes\analysis</Filter>
+    </ClInclude>
     <ClInclude Include="src\analysis\window_function.h">
       <Filter>Fuentes\analysis</Filter>
     </ClInclude>
@@ -185,6 +197,9 @@
     <ClInclude Include="src\core\types.h">
       <Filter>Fuentes\core</Filter>
     </ClInclude>
+    <ClInclude Include="src\render\band_waveform_texture.h">
+      <Filter>Fuentes\render</Filter>
+    </ClInclude>
     <ClInclude Include="src\render\bar_spectrum.h">
       <Filter>Fuentes\render</Filter>
     </ClInclude>
@@ -210,6 +225,9 @@
       <Filter>Fuentes\render\modes</Filter>
     </ClInclude>
     <ClInclude Include="src\render\modes\radial_mode.h">
+      <Filter>Fuentes\render\modes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\modes\stacked_oscilloscope_mode.h">
       <Filter>Fuentes\render\modes</Filter>
     </ClInclude>
     <ClInclude Include="src\render\modes\visual_mode.h">
@@ -270,6 +288,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\radial.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\stacked.frag">
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\waterfall.frag">

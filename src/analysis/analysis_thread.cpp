@@ -9,6 +9,7 @@
 
 #include "analysis/window_function.h"
 #include "analysis/band_metrics.h"
+#include "analysis/band_synthesizer.h"
 #include "core/band_layout.h"
 
 namespace analysis {
@@ -76,6 +77,7 @@ public:
 
     const core::BandLayout& layout() const { return layout_; }
     uint64_t version() const { return layout_version_; }
+    float mask_ramp_bins() const { return bands_.mask_ramp_bins; }
 
 private:
     uint64_t seen_version_ = ~0ull;
@@ -110,6 +112,9 @@ void AnalysisThread(core::AudioData& audio, core::VisualizerData& vis, core::Sha
 
     BandLayoutTracker bands;
     BandMetrics band_metrics; // vectores de trabajo que se intercambian con la trama de salida
+    BandSynthesizer synth(FFT_SIZE, HOP_SIZE);
+    bool synth_active = false; // configurado para la partición actual y con acumuladores válidos
+    std::vector<float> band_waves;
     uint64_t consumed = 0; // total_samples en la última ventana procesada
     uint64_t sequence = 0;
 
@@ -131,8 +136,9 @@ void AnalysisThread(core::AudioData& audio, core::VisualizerData& vis, core::Sha
         const int sample_rate = audio.sample_rate.load();
         if (sample_rate <= 0) continue;
 
-        bands.Refresh(config, sample_rate);
+        const bool layout_changed = bands.Refresh(config, sample_rate);
         const core::BandLayout& layout = bands.layout();
+        if (layout_changed) synth_active = false;
 
         // Métricas en el dominio del tiempo sobre la ventana sin enventanar.
         double sum_sq = 0.0;
@@ -186,6 +192,30 @@ void AnalysisThread(core::AudioData& audio, core::VisualizerData& vis, core::Sha
         band_metrics.peak_db.swap(out.band_peak_db);
 
         std::copy(waveform.begin(), waveform.end(), out.mix_waveform.begin());
+
+        // Ondas por banda (fase C): solo si algún modo las pide y la partición es razonable.
+        const bool want_waves = vis.band_waveforms_requested.load(std::memory_order_relaxed) &&
+                                layout.count() > 0 && layout.count() <= core::MAX_WAVEFORM_BANDS;
+        if (want_waves) {
+            if (!synth_active) {
+                synth.Configure(layout, bands.mask_ramp_bins(), window);
+                synth_active = true;
+            }
+            band_waves.swap(out.band_waveform);
+            synth.Process(fft_out, band_waves);
+            band_waves.swap(out.band_waveform);
+            out.band_waveform_rows = synth.rows();
+            out.band_waveform_valid = true;
+            // Las hop_size muestras de la mezcla alineadas con las ondas reconstruidas: las más
+            // antiguas de la ventana, que ya recibieron todas las contribuciones del solapamiento.
+            out.mix_hop_waveform.assign(raw.begin(), raw.begin() + HOP_SIZE);
+        }
+        else {
+            synth_active = false; // al reactivar se reconfigura y se vacían los acumuladores
+            out.band_waveform_valid = false;
+            out.band_waveform_rows = 0;
+        }
+
         vis.analysis.Publish();
     }
 

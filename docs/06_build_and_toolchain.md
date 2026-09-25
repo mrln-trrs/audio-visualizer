@@ -107,14 +107,14 @@ build/Release/ (o x64/Release/)
 
 ## 5.5 Pruebas Numéricas
 
-CMake define el objetivo `band_metrics_test` (sin audio ni ventana) que verifica la partición en bandas, las métricas por banda y la conservación de la energía con una señal sintética:
+CMake define dos objetivos de prueba sin audio ni ventana: `band_metrics_test` (partición en bandas, métricas por banda y conservación de la energía) y `band_synthesis_test` (máscaras, reconstrucción por solapamiento y suma, y teorema de la suma de bandas):
 
 ```powershell
-cmake --build build --config Release --target band_metrics_test
+cmake --build build --config Release --target band_metrics_test band_synthesis_test
 ctest --test-dir build -C Release --output-on-failure
 ```
 
-Los criterios y sus resultados están en el documento 11, fase B. El objetivo no forma parte de la solución `.sln`.
+Los criterios y sus resultados están en el documento 11, fases B y C. Los objetivos de prueba no forman parte de la solución `.sln`.
 
 ## 6. Empaquetado y Distribución
 

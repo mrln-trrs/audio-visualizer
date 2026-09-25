@@ -196,7 +196,7 @@ Resumen ejecutivo del diseño detallado en [11_analysis_frame_architecture.md](1
 
 | Aspecto | Versión 2.0 | Versión 3.0 |
 |---|---|---|
-| Salida del procesado | `vector<float>` de alturas por píxel | `AnalysisFrame`: magnitud, fase, dB, RMS, pico, flujo espectral, centroide y mezcla (implementado, fase A); energía, RMS y ondas por banda (fase B) |
+| Salida del procesado | `vector<float>` de alturas por píxel | `AnalysisFrame`: magnitud, fase, dB, RMS, pico, flujo espectral, centroide y mezcla (fase A); energía, RMS y pico por banda (fase B); ondas por banda y mezcla alineada (fase C). Todo implementado |
 | Intercambio | `swap` bajo mutex más copia en el render | Triple búfer sin copia, índice atómico (`core::TripleBuffer`, implementado) |
 | Bandas | Implícitas, una por píxel | Configurables: octavas, lineal, manual, por bin; con nombre, color, rampas |
 | Ondas | Solo mezcla | Mezcla y una por banda, reconstruidas por IFFT enmascarada con solapamiento (reconstrucción exacta, teorema 4.3 del documento 10) |

@@ -100,6 +100,7 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
   <ItemGroup>
     <ClCompile Include="src\analysis\analysis_thread.cpp" />
     <ClCompile Include="src\analysis\band_metrics.cpp" />
+    <ClCompile Include="src\analysis\band_synthesizer.cpp" />
     <ClCompile Include="src\analysis\window_function.cpp" />
     <ClCompile Include="src\app\application.cpp" />
     <ClCompile Include="src\audio\capture_session.cpp" />
@@ -110,6 +111,7 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
     <ClCompile Include="src\core\config.cpp" />
     <ClCompile Include="src\core\types.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\render\band_waveform_texture.cpp" />
     <ClCompile Include="src\render\bar_spectrum.cpp" />
     <ClCompile Include="src\render\data_textures.cpp" />
     <ClCompile Include="src\render\frame_limiter.cpp" />
@@ -118,6 +120,7 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
     <ClCompile Include="src\render\modes\band_meters_mode.cpp" />
     <ClCompile Include="src\render\modes\bars_mode.cpp" />
     <ClCompile Include="src\render\modes\radial_mode.cpp" />
+    <ClCompile Include="src\render\modes\stacked_oscilloscope_mode.cpp" />
     <ClCompile Include="src\render\modes\waterfall_mode.cpp" />
     <ClCompile Include="src\render\modes\waveform_mode.cpp" />
     <ClCompile Include="src\render\renderer.cpp" />
@@ -136,6 +139,7 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
   <ItemGroup>
     <ClInclude Include="src\analysis\analysis_thread.h" />
     <ClInclude Include="src\analysis\band_metrics.h" />
+    <ClInclude Include="src\analysis\band_synthesizer.h" />
     <ClInclude Include="src\analysis\window_function.h" />
     <ClInclude Include="src\app\application.h" />
     <ClInclude Include="src\audio\capture_session.h" />
@@ -149,6 +153,7 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
     <ClInclude Include="src\core\shared_state.h" />
     <ClInclude Include="src\core\triple_buffer.h" />
     <ClInclude Include="src\core\types.h" />
+    <ClInclude Include="src\render\band_waveform_texture.h" />
     <ClInclude Include="src\render\bar_spectrum.h" />
     <ClInclude Include="src\render\data_textures.h" />
     <ClInclude Include="src\render\embedded_shaders.h" />
@@ -158,6 +163,7 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
     <ClInclude Include="src\render\modes\band_meters_mode.h" />
     <ClInclude Include="src\render\modes\bars_mode.h" />
     <ClInclude Include="src\render\modes\radial_mode.h" />
+    <ClInclude Include="src\render\modes\stacked_oscilloscope_mode.h" />
     <ClInclude Include="src\render\modes\visual_mode.h" />
     <ClInclude Include="src\render\modes\waterfall_mode.h" />
     <ClInclude Include="src\render\modes\waveform_mode.h" />
@@ -182,6 +188,7 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
     <None Include="shaders\bars.vert" />
     <None Include="shaders\quad.vert" />
     <None Include="shaders\radial.frag" />
+    <None Include="shaders\stacked.frag" />
     <None Include="shaders\waterfall.frag" />
     <None Include="shaders\waveform.frag" />
   </ItemGroup>

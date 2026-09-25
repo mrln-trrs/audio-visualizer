@@ -161,6 +161,10 @@ La prueba `tests/band_metrics_test.cpp` (fase B) sintetiza una senoidal de 100 H
 - El pico medido es -6,40 dB, no -6,00. El tono cae en el bin 4,27, a 0,27 bins del centro, y la ventana de Hann atenúa en esa posición unos 0,4 dB (pérdida de festoneado; el máximo, a medio bin, es 1,42 dB). Cualquier medidor por bin comparte esta incertidumbre.
 - La banda contigua "Sub" (20 a 60 Hz) recibe -37,9 dB. Su bin más alto, el 2 (46,9 Hz), está a 2,27 bins del tono, dentro del lóbulo principal de Hann, que abarca 4 bins. Un criterio que exigiera "energía cero" fuera de la banda del tono sería incompatible con la ecuación 5.1.
 
+### 4.5 Confirmación empírica en el proyecto
+
+`tests/band_synthesis_test.cpp` (fase C) implementa exactamente la cadena de las secciones 4.1 a 4.4 con Hann periódica, $N = 2048$, $H = 256$ y rampas de 1,5 bins, sobre una señal de tres tonos y ruido. La suma de las máscaras es 1 con error cero, y la suma de las ondas reconstruidas de las siete bandas y del resto reproduce la señal con error máximo de $2{,}6 \cdot 10^{-7}$ en escala completa sobre 44 032 muestras: el teorema 4.3 se cumple hasta el redondeo de `float`.
+
 ## 6. Cuánta información se genera
 
 ### 6.1 Muestreo de señales paso banda

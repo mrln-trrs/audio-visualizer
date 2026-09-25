@@ -40,7 +40,16 @@ struct AnalysisFrame {
     // Mezcla en el dominio del tiempo: las WAVEFORM_SNAPSHOT_SIZE muestras más recientes.
     std::vector<float> mix_waveform;
 
-    // Fase C (docs/11, sección 5.3): band_waveform.
+    // Ondas por banda (fase C). Solo cuando el render las pide y hay pocas bandas.
+    // band_waveform tiene band_waveform_rows filas de hop_size muestras: las K bandas y, en la
+    // última fila, la banda implícita "resto". Son las hop_size muestras más antiguas de la
+    // ventana, que ya han recibido todas las contribuciones del solapamiento; mix_hop_waveform
+    // son las mismas hop_size muestras de la mezcla original, alineadas, para comprobar que la
+    // suma de las filas reproduce la señal (docs/10, teorema 4.3).
+    bool band_waveform_valid = false;
+    int band_waveform_rows = 0;
+    std::vector<float> band_waveform;
+    std::vector<float> mix_hop_waveform;
 
     float bin_resolution_hz() const { return sample_rate > 0 ? static_cast<float>(sample_rate) / fft_size : 0.0f; }
     bool valid() const { return sequence > 0 && sample_rate > 0 && !magnitude.empty(); }

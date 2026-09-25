@@ -29,4 +29,13 @@ constexpr int SPECTRUM_BINS = FFT_SIZE / 2 + 1;
 // Muestras crudas publicadas para el osciloscopio.
 constexpr int WAVEFORM_SNAPSHOT_SIZE = 1024;
 
+// Máximo de bandas para las que se reconstruye la onda (una IFFT por banda y trama).
+// Por encima, por ejemplo en el modo per_bin, no se sintetiza (docs/10, sección 6.3).
+constexpr int MAX_WAVEFORM_BANDS = 32;
+
+// Historial de ondas por banda que conserva el render, en muestras. Múltiplo de HOP_SIZE para
+// que cada trama nueva ocupe un bloque entero sin partirse en el anillo.
+constexpr int BAND_WAVEFORM_HISTORY = 4096;
+static_assert(BAND_WAVEFORM_HISTORY % HOP_SIZE == 0, "BAND_WAVEFORM_HISTORY debe ser multiplo de HOP_SIZE");
+
 } // namespace core

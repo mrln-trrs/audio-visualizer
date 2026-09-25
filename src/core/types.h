@@ -12,6 +12,7 @@ enum VisualizerMode {
     MODE_WAVEFORM = 2,
     MODE_WATERFALL = 3,
     MODE_BAND_METERS = 4,
+    MODE_STACKED_OSCILLOSCOPE = 5,
     MODE_COUNT
 };
 
