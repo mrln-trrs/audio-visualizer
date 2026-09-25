@@ -4,28 +4,44 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <cstdint>
 #include "config.h"
 
-// Tamaño de la ventana de la FFT.
-const int FFT_SIZE = 4096;
+// Tamaño de la ventana de análisis, en muestras mono. A 48 kHz equivale a ~42,7 ms.
+// Cuanto mayor, más resolución en graves; cuanto menor, menos latencia.
+constexpr int FFT_SIZE = 2048;
 
-// Estructura de datos compartida entre el hilo de captura y el de procesamiento
+// Cada cuántas muestras nuevas se recalcula el espectro (ventana deslizante con solapamiento).
+// A 48 kHz, 256 muestras = 5,3 ms, es decir, hasta ~187 espectros/s. En la práctica el motor
+// de audio de Windows entrega paquetes cada ~10 ms, así que se obtienen ~100 espectros/s.
+constexpr int HOP_SIZE = 256;
+
+// Búfer circular de captura. Potencia de dos para indexar con máscara.
+constexpr int RING_SIZE = FFT_SIZE * 4;
+constexpr uint64_t RING_MASK = RING_SIZE - 1;
+static_assert((RING_SIZE & (RING_SIZE - 1)) == 0, "RING_SIZE debe ser potencia de dos");
+
+// Datos compartidos entre el hilo de captura y el de procesamiento.
 struct AudioData {
     std::mutex mtx;
     std::condition_variable cv;
-    std::vector<double> in_data; // Vector para almacenar la entrada de audio
+    // Muestras mono. La posición de escritura es total_samples & RING_MASK.
+    std::vector<float> ring = std::vector<float>(RING_SIZE, 0.0f);
+    // Muestras escritas desde el inicio. Protegido por mtx.
+    uint64_t total_samples = 0;
+    // Frecuencia de muestreo real del dispositivo. La fija el hilo de captura.
+    std::atomic<int> sample_rate{ 0 };
 };
 
-// Estructura de datos compartida entre el hilo de procesamiento y el de renderizado
+// Datos compartidos entre el hilo de procesamiento y el de renderizado.
 struct VisualizerData {
     std::mutex mtx;
-    std::condition_variable cv;
-    // Dos búferes para la técnica de doble amortiguación
-    std::vector<double> out_data[2];
-    // Índice atómico para indicar qué búfer es el que se está escribiendo actualmente
-    std::atomic<int> write_buffer_index;
-    // Variable atómica para comunicar el número de barras entre hilos
-    std::atomic<int> atomic_num_bars;
-    // Bandera para indicar a los hilos que deben terminar
-    std::atomic<bool> should_terminate;
+    // Último espectro publicado: un valor en [0, 1] por barra.
+    std::vector<float> spectrum;
+    // Se incrementa en cada publicación. El renderizador solo copia si ha cambiado.
+    std::atomic<uint64_t> generation{ 0 };
+    // Número de barras que quiere el renderizador (ancho del framebuffer en píxeles).
+    std::atomic<int> atomic_num_bars{ 1024 };
+    // Bandera global de cierre.
+    std::atomic<bool> should_terminate{ false };
 };

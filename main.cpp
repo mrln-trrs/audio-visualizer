@@ -1,6 +1,6 @@
 #include <iostream>
 #include <thread>
-#include <Windows.h> // Necesario para la función FreeConsole()
+#include <Windows.h> // FreeConsole()
 #include "common.h"
 #include "audio-capture.h"
 #include "audio-processing.h"
@@ -8,48 +8,31 @@
 #include "config.h"
 
 int main() {
-    // Ocultar la ventana de la consola.
-    // Esto es específico de Windows. En otros sistemas operativos, se maneja de forma diferente.
-    // Para depurar, es posible que quieras comentar esta línea.
+    // Ocultar la consola. Comentar esta línea para ver los mensajes de diagnóstico.
     FreeConsole();
 
-    // Crear una instancia de la estructura de datos compartida para la captura de audio.
     AudioData sharedAudioData;
-    sharedAudioData.in_data.resize(FFT_SIZE);
-
-    // Crear una instancia de la estructura de datos compartida para la visualización.
     VisualizerData sharedVisualizerData;
-    // Inicializamos con un valor por defecto.
-    const int DEFAULT_WINDOW_WIDTH = 1024;
-    sharedVisualizerData.out_data[0].resize(DEFAULT_WINDOW_WIDTH);
-    sharedVisualizerData.out_data[1].resize(DEFAULT_WINDOW_WIDTH);
-    sharedVisualizerData.write_buffer_index.store(0);
-    sharedVisualizerData.atomic_num_bars.store(DEFAULT_WINDOW_WIDTH);
-    sharedVisualizerData.should_terminate.store(false);
-
-    // Crear una instancia de la estructura de configuración compartida.
     SharedConfigData sharedConfigData;
-    // Cargar la configuración desde el archivo.
+
+    // config.json se copia a la carpeta de salida en el post-build y el depurador
+    // arranca con esa carpeta como directorio de trabajo.
     LoadConfig(sharedConfigData, "config.json");
 
-    // Crear un hilo para la captura de audio.
     std::thread audioCaptureThread(AudioCaptureThread, std::ref(sharedAudioData), std::ref(sharedVisualizerData));
-
-    // Crear un hilo para el procesamiento de la señal.
     std::thread signalProcessingThread(AudioProcessingThread, std::ref(sharedAudioData), std::ref(sharedVisualizerData), std::ref(sharedConfigData));
 
-    // Crear un hilo para el renderizado de la visualización, pasándole los datos de visualización y de configuración.
-    std::thread renderThread(RenderThread, std::ref(sharedVisualizerData), std::ref(sharedConfigData));
+    // El renderizado corre en este hilo hasta que se cierra la ventana.
+    RenderThread(sharedVisualizerData, sharedConfigData, sharedAudioData);
 
-    // Esperar a que el hilo de renderizado termine (cuando la ventana se cierra).
-    renderThread.join();
+    // Pedir el cierre. El flag se cambia con el mutex tomado para que el hilo de procesado
+    // no pueda perder la notificación entre comprobar el predicado y dormirse.
+    {
+        std::lock_guard<std::mutex> lock(sharedAudioData.mtx);
+        sharedVisualizerData.should_terminate.store(true);
+    }
+    sharedAudioData.cv.notify_all();
 
-    // Notificar a los otros hilos que deben terminar.
-    sharedVisualizerData.should_terminate.store(true);
-    sharedAudioData.cv.notify_one();
-    sharedVisualizerData.cv.notify_one();
-
-    // Esperar a que los hilos restantes terminen.
     audioCaptureThread.join();
     signalProcessingThread.join();
 

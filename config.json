@@ -1,10 +1,15 @@
 {
   "estilos": {
-    "decay_factor": 0.85,
-    "smoothing_factor": 0.05,
-    "amplitude_factor": 0.04,
+    "attack_ms": 12,
+    "release_ms": 160,
+    "amplitude_factor": 1.0,
+    "dynamic_range_db": 60,
     "base_color_rgb": [ 0.65, 0.15, 0.15 ],
-    "reactivity_factor": 0.8,
-    "bin_grouping_factor": 10.0
+    "bin_grouping_factor": 10.0,
+    "frequency_scale": "linear",
+    "min_frequency": 30,
+    "max_frequency": 16000,
+    "vsync": true,
+    "max_fps": 0
   }
 }
