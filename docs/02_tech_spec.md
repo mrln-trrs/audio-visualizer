@@ -160,6 +160,36 @@ Estructura diseñada para funcionar inmediatamente tras clonar el repositorio:
 
 ---
 
+## 6.5 Organización del Código por Capas
+
+El código fuente vive en `src/` con una carpeta por capa y un archivo por responsabilidad. Las dependencias entre capas van en un solo sentido: `core` no depende de nadie; `audio`, `analysis` y `render` dependen de `core`; `ui` depende de `core` y de `audio` (para refrescar dispositivos); `app` orquesta a todas. Ningún archivo de `audio` o `analysis` incluye OpenGL, y ningún archivo de `render` o `ui` incluye WASAPI.
+
+```mermaid
+flowchart TD
+    APP[app<br/>application] --> AUD[audio<br/>capture_thread, capture_session<br/>sample_format, device_enumerator]
+    APP --> ANA[analysis<br/>analysis_thread, window_function<br/>band_mapper]
+    APP --> REN[render<br/>renderer, gl_window, shader_program<br/>data_textures, spectrum_dynamics<br/>frame_limiter, modes/*]
+    REN --> UI[ui<br/>hud, theme, telemetry]
+    AUD --> CORE[core<br/>constants, types<br/>shared_state, config]
+    ANA --> CORE
+    REN --> CORE
+    UI --> CORE
+    UI -. refrescar dispositivos .-> AUD
+```
+
+| Capa | Responsabilidad | Dependencias externas |
+|---|---|---|
+| `core` | Constantes, tipos, estado compartido, configuración | nlohmann/json (solo `config.cpp`) |
+| `audio` | Loopback WASAPI, formato de muestra, enumeración, sesión y reintentos | Windows COM, WASAPI, avrt, winmm |
+| `analysis` | Ventana, FFT, magnitud, dB, mapeo a barras, publicación | FFTW (`fftwf_*`) |
+| `render` | Ventana y contexto, shaders, texturas, dinámica, limitador, modos | GLFW, GLEW, OpenGL 3.3 |
+| `ui` | Panel, tema, telemetría | Dear ImGui |
+| `app` | Arranque de hilos y cierre ordenado | Windows (`FreeConsole`) |
+
+Cada modo visual implementa `render::IVisualMode` (`Init`, `Render`, `Shutdown`, `Name`) y recibe un `RenderContext` con el framebuffer, la configuración, las texturas de datos y la dinámica. Añadir un modo no toca el análisis ni el bucle de render más allá de registrar la clase (procedimiento en el documento 08, sección 2).
+
+---
+
 ## 7. Capa de Análisis y Descomposición en Bandas (Propuesta 3.0)
 
 Resumen ejecutivo del diseño detallado en [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), cuya base matemática se demuestra en [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md).
@@ -171,7 +201,7 @@ Resumen ejecutivo del diseño detallado en [11_analysis_frame_architecture.md](1
 | Bandas | Implícitas, una por píxel | Configurables: octavas, lineal, manual, por bin; con nombre, color, rampas |
 | Ondas | Solo mezcla | Mezcla y una por banda, reconstruidas por IFFT enmascarada con solapamiento (reconstrucción exacta, teorema 4.3 del documento 10) |
 | Dinámica | Dos escalares globales | Vectores de ataque y caída por banda |
-| Ventana | Hann simétrica | Hann periódica (condición necesaria para la reconstrucción exacta) |
+| Ventana | Hann periódica (ya implementada en `src/analysis/window_function.cpp`) | Sin cambios; es la condición necesaria para la reconstrucción exacta |
 | Texturas | Espectro y forma de onda 1D, cascada 2D | Historial de espectro y fase, ondas por banda, estado por banda, UBO de bandas |
 
 Límites que la especificación asume explícitamente:

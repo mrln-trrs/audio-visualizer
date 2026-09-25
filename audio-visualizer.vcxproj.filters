@@ -1,72 +1,116 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Archivos de origen">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="Fuentes">
+      <UniqueIdentifier>{3cbde0c6-38ca-5a52-9821-6c4ffab7583f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Archivos de encabezado">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    <Filter Include="Fuentes\analysis">
+      <UniqueIdentifier>{cf47909b-2b03-592c-a80e-561e8c2cd2e2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Archivos de recursos">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="Fuentes\app">
+      <UniqueIdentifier>{2c14d191-7373-5223-a365-3ba7a29c7816}</UniqueIdentifier>
     </Filter>
-    <Filter Include="libs">
-      <UniqueIdentifier>{103816ba-e3c2-497e-b75c-2329c6e91fa0}</UniqueIdentifier>
+    <Filter Include="Fuentes\audio">
+      <UniqueIdentifier>{012641b2-8164-54d2-bfcc-cb633b855038}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="audio-capture.cpp">
-      <Filter>Archivos de origen</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>Archivos de origen</Filter>
-    </ClCompile>
-    <ClCompile Include="audio-processing.cpp">
-      <Filter>Archivos de origen</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer.cpp">
-      <Filter>Archivos de origen</Filter>
-    </ClCompile>
-    <ClCompile Include="config.cpp">
-      <Filter>Archivos de origen</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="config.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
-    <ClInclude Include="audio-processing.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
-    <ClInclude Include="common.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
-    <ClInclude Include="audio-capture.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="config.json" />
-    <None Include=".gitignore" />
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="Terceros">
-      <UniqueIdentifier>{6f1c3a2e-6d2b-4f0e-9c1a-2b7e8d9f0a11}</UniqueIdentifier>
+    <Filter Include="Fuentes\core">
+      <UniqueIdentifier>{6c8e4924-274a-51ff-a8bc-f2c50965c365}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Terceros\imgui">
-      <UniqueIdentifier>{7a2d4b3f-7e3c-4a1f-8d2b-3c8f9e0a1b22}</UniqueIdentifier>
+    <Filter Include="Fuentes\render">
+      <UniqueIdentifier>{cd6da3ac-acf9-5f27-b730-c03f2f7a0ddd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fuentes\render\modes">
+      <UniqueIdentifier>{7102fce5-3946-59de-95f2-2d13f2acd300}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fuentes\ui">
+      <UniqueIdentifier>{b9b34a3d-2373-5455-84e2-48a668222dbf}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shaders">
-      <UniqueIdentifier>{8b3e5c4a-8f4d-4b2a-9e3c-4d9a0f1b2c33}</UniqueIdentifier>
+      <UniqueIdentifier>{35f4e124-b5b9-53ac-b0bc-ffb89f33286f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Terceros">
+      <UniqueIdentifier>{52235cbe-926b-5694-8f22-3f881688a239}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Terceros\imgui">
+      <UniqueIdentifier>{cb88a4d0-5ae4-521c-b9ca-aa21f55b30f3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\analysis\analysis_thread.cpp">
+      <Filter>Fuentes\analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="src\analysis\band_mapper.cpp">
+      <Filter>Fuentes\analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="src\analysis\window_function.cpp">
+      <Filter>Fuentes\analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="src\app\application.cpp">
+      <Filter>Fuentes\app</Filter>
+    </ClCompile>
+    <ClCompile Include="src\audio\capture_session.cpp">
+      <Filter>Fuentes\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\audio\capture_thread.cpp">
+      <Filter>Fuentes\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\audio\device_enumerator.cpp">
+      <Filter>Fuentes\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\audio\sample_format.cpp">
+      <Filter>Fuentes\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\config.cpp">
+      <Filter>Fuentes\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\types.cpp">
+      <Filter>Fuentes\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Fuentes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\data_textures.cpp">
+      <Filter>Fuentes\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\frame_limiter.cpp">
+      <Filter>Fuentes\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\fullscreen_quad.cpp">
+      <Filter>Fuentes\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\gl_window.cpp">
+      <Filter>Fuentes\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\modes\bars_mode.cpp">
+      <Filter>Fuentes\render\modes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\modes\radial_mode.cpp">
+      <Filter>Fuentes\render\modes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\modes\waterfall_mode.cpp">
+      <Filter>Fuentes\render\modes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\modes\waveform_mode.cpp">
+      <Filter>Fuentes\render\modes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\renderer.cpp">
+      <Filter>Fuentes\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\shader_program.cpp">
+      <Filter>Fuentes\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\spectrum_dynamics.cpp">
+      <Filter>Fuentes\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\hud.cpp">
+      <Filter>Fuentes\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\telemetry.cpp">
+      <Filter>Fuentes\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\theme.cpp">
+      <Filter>Fuentes\ui</Filter>
+    </ClCompile>
     <ClCompile Include="imgui-1.91.5\imgui.cpp">
       <Filter>Terceros\imgui</Filter>
     </ClCompile>
@@ -85,6 +129,92 @@
     <ClCompile Include="imgui-1.91.5\backends\imgui_impl_opengl3.cpp">
       <Filter>Terceros\imgui</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\analysis\analysis_thread.h">
+      <Filter>Fuentes\analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="src\analysis\band_mapper.h">
+      <Filter>Fuentes\analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="src\analysis\window_function.h">
+      <Filter>Fuentes\analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="src\app\application.h">
+      <Filter>Fuentes\app</Filter>
+    </ClInclude>
+    <ClInclude Include="src\audio\capture_session.h">
+      <Filter>Fuentes\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\audio\capture_thread.h">
+      <Filter>Fuentes\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\audio\device_enumerator.h">
+      <Filter>Fuentes\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\audio\sample_format.h">
+      <Filter>Fuentes\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\config.h">
+      <Filter>Fuentes\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\constants.h">
+      <Filter>Fuentes\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\shared_state.h">
+      <Filter>Fuentes\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\types.h">
+      <Filter>Fuentes\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\data_textures.h">
+      <Filter>Fuentes\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\embedded_shaders.h">
+      <Filter>Fuentes\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\frame_limiter.h">
+      <Filter>Fuentes\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\fullscreen_quad.h">
+      <Filter>Fuentes\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\gl_window.h">
+      <Filter>Fuentes\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\modes\bars_mode.h">
+      <Filter>Fuentes\render\modes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\modes\radial_mode.h">
+      <Filter>Fuentes\render\modes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\modes\visual_mode.h">
+      <Filter>Fuentes\render\modes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\modes\waterfall_mode.h">
+      <Filter>Fuentes\render\modes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\modes\waveform_mode.h">
+      <Filter>Fuentes\render\modes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\renderer.h">
+      <Filter>Fuentes\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\shader_program.h">
+      <Filter>Fuentes\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\spectrum_dynamics.h">
+      <Filter>Fuentes\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\hud.h">
+      <Filter>Fuentes\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\telemetry.h">
+      <Filter>Fuentes\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\theme.h">
+      <Filter>Fuentes\ui</Filter>
+    </ClInclude>
     <ClInclude Include="imgui-1.91.5\imconfig.h">
       <Filter>Terceros\imgui</Filter>
     </ClInclude>
@@ -100,10 +230,16 @@
     <ClInclude Include="imgui-1.91.5\backends\imgui_impl_opengl3.h">
       <Filter>Terceros\imgui</Filter>
     </ClInclude>
-    <None Include="shaders\bars.vert">
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
+    <None Include="config.json" />
+    <None Include="README.md" />
+    <None Include="CMakeLists.txt" />
+    <None Include="shaders\bars.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\bars.frag">
+    <None Include="shaders\bars.vert">
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\quad.vert">
@@ -112,12 +248,11 @@
     <None Include="shaders\radial.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\waveform.frag">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="shaders\waterfall.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="CMakeLists.txt" />
+    <None Include="shaders\waveform.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

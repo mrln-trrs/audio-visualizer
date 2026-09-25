@@ -41,90 +41,66 @@ Esta guía define las directrices de ingeniería de software, arquitectura de c�
 
 ## 2. Guía Paso a Paso: Cómo Agregar un Nuevo Modo Visual
 
-Supongamos que deseas agregar un nuevo modo llamado **"Partículas Reactivas" (Particle Orbit)**:
+Cada modo es una clase que implementa `render::IVisualMode` en `src/render/modes/`. Supongamos un modo nuevo, "Partículas".
 
-### Paso 1: Registrar el Modo en `common.h`
-Abre [`common.h`](../common.h) y añade el identificador en `enum VisualizerMode`:
+### Paso 1: Registrar el identificador en `src/core/types.h`
 ```cpp
 enum VisualizerMode {
     MODE_BARS = 0,
     MODE_RADIAL = 1,
     MODE_WAVEFORM = 2,
     MODE_WATERFALL = 3,
-    MODE_PARTICLES = 4 // <-- Nuevo modo
+    MODE_PARTICLES = 4,   // nuevo
+    MODE_COUNT
 };
 ```
+Y su nombre en `VisualizerModeName` (`src/core/types.cpp`). `MODE_COUNT` dimensiona la tabla de modos del render y valida `visual_mode` al cargar la configuración.
 
-### Paso 2: Crear el Fragment Shader en `shaders/`
-Crea el archivo `shaders/particles.frag`:
-```glsl
-#version 330 core
-in vec2 v_uv;
-out vec4 FragColor;
+### Paso 2: Escribir el shader en `shaders/particles.frag` y su copia embebida
+El fragment shader recibe los mismos uniformes que los modos procedurales existentes (`u_spectrum_tex`, `u_resolution`, `u_time`, `u_base_color`, `u_peak_color`, `u_amplitude`). Añadir la copia literal en `src/render/embedded_shaders.h` como `kParticlesFrag`, para que el ejecutable arranque aunque falte la carpeta `shaders/`.
 
-uniform sampler2D u_spectrum_tex;
-uniform vec2 u_resolution;
-uniform float u_time;
-uniform vec3 u_base_color;
-uniform float u_amplitude;
-
-void main() {
-    vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
-    // Tu lógica matemática y visual aquí...
-    FragColor = vec4(u_base_color, 1.0);
-}
-```
-
-### Paso 3: Cargar y Compilar en `renderer.cpp`
-En [`renderer.cpp`](../renderer.cpp):
-1. Añade un fallback en string para emergencias:
-   ```cpp
-   const char* kParticlesFragFallback = R"(#version 330 core ... )";
-   ```
-2. Carga y compila el programa durante la inicialización:
-   ```cpp
-   std::string partFragSrc = LoadShaderSource("shaders/particles.frag", kParticlesFragFallback);
-   GLuint progParticles = CreateProgram(quadVertSrc, partFragSrc, "Particles");
-   ```
-3. En el bloque de limpieza al final de `RenderThread`, añade:
-   ```cpp
-   glDeleteProgram(progParticles);
-   ```
-
-### Paso 4: Implementar la Rama de Renderizado en `RenderThread`
-En el bucle de cuadros de [`renderer.cpp`](../renderer.cpp):
+### Paso 3: Crear la clase del modo
+`src/render/modes/particles_mode.h`:
 ```cpp
-else if (cfg.visual_mode == MODE_PARTICLES) {
-    glUseProgram(progParticles);
-    glUniform2f(glGetUniformLocation(progParticles, "u_resolution"), static_cast<float>(fbw), static_cast<float>(fbh));
-    glUniform1f(glGetUniformLocation(progParticles, "u_time"), static_cast<float>(now));
-    glUniform1f(glGetUniformLocation(progParticles, "u_amplitude"), cfg.amplitude_factor);
+#pragma once
+#include <GL/glew.h>
+#include "render/modes/visual_mode.h"
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texSpectrum);
-    glUniform1i(glGetUniformLocation(progParticles, "u_spectrum_tex"), 0);
-
-    glBindVertexArray(vaoQuad);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
+namespace render {
+class ParticlesMode : public IVisualMode {
+public:
+    bool Init() override;
+    void Render(const RenderContext& ctx) override;
+    void Shutdown() override;
+    const char* Name() const override { return "Particulas"; }
+private:
+    GLuint program_ = 0;
+};
 }
 ```
+`src/render/modes/particles_mode.cpp` sigue el patrón de `radial_mode.cpp`: `Init` compila con `CreateProgram(LoadShaderSource("shaders/quad.vert", embedded::kQuadVert), LoadShaderSource("shaders/particles.frag", embedded::kParticlesFrag), "Particles")`; `Render` fija uniformes, enlaza `ctx.textures.spectrum()` y llama a `ctx.quad.Draw()`; `Shutdown` borra el programa.
 
-### Paso 5: Añadir el Control a la Interfaz Dear ImGui y Atajo de Teclado
-1. En el atajo de teclado:
-   ```cpp
-   if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) cfg.visual_mode = MODE_PARTICLES;
-   ```
-2. En la ventana de Dear ImGui:
-   ```cpp
-   ImGui::RadioButton("Particulas (5)", &cfg.visual_mode, MODE_PARTICLES);
-   ```
+### Paso 4: Registrar el modo en `src/render/renderer.cpp`
+En la tabla `modes`:
+```cpp
+modes[core::MODE_PARTICLES] = std::make_unique<ParticlesMode>();
+```
+Y en `KeyboardShortcuts::Poll`, la tecla: `{ GLFW_KEY_5, core::MODE_PARTICLES }`.
 
-### Paso 6: Compilar y Validar
+### Paso 5: Exponerlo en el HUD (`src/ui/hud.cpp`, función `TabModes`)
+```cpp
+if (ImGui::RadioButton("5. Particulas", cfg.visual_mode == core::MODE_PARTICLES)) cfg.visual_mode = core::MODE_PARTICLES;
+```
+
+### Paso 6: Añadir los archivos al build
+Los tres sistemas leen la lista de fuentes de forma explícita. Añadir `particles_mode.cpp` y `.h` a `CMakeLists.txt` (`PROJECT_SOURCES`), a `audio-visualizer.vcxproj` (`ClCompile` y `ClInclude`) y a `audio-visualizer.vcxproj.filters` (filtro `Fuentes\render\modes`).
+
+### Paso 7: Compilar, verificar y documentar
 ```powershell
 cmake --build build --config Release
 .\build\Release\audio-visualizer.exe
 ```
+Actualizar el documento 07 (atajos y modos) y el `README.md`.
 
 ---
 

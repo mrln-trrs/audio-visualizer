@@ -77,7 +77,7 @@ En la versión 2.0: $N = 2048$, $H = 256$, $f_s = 48000$. Cada trama cubre $N/f_
 
 $$w[n] = \frac{1}{2}\left(1 - \cos\frac{2\pi n}{N}\right), \qquad n = 0, \dots, N-1$$
 
-Nota de implementación. La versión 2.0 usa el denominador $N-1$ (ventana simétrica). Para la reconstrucción exacta de la sección 4 hace falta el denominador $N$ (ventana periódica). La diferencia numérica en el espectro es despreciable, pero la propiedad de suma constante de la sección 4.2 solo se cumple con la forma periódica. Es un cambio de una línea que debe acompañar a la implementación de la 3.0.
+Nota de implementación. La 2.0 original usaba el denominador $N-1$ (ventana simétrica). Desde la reestructuración del código en `src/`, `analysis::MakePeriodicHann` implementa la forma periódica con denominador $N$, que es la que cumple la propiedad de suma constante de la sección 4.2. La diferencia numérica en el espectro es despreciable; la diferencia para la reconstrucción exacta es esencial.
 
 ## 4. Reconstrucción perfecta y separación en bandas
 

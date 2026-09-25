@@ -90,9 +90,9 @@ $$\text{PCM24:} \quad x[f] = \frac{1}{C} \sum_{c=0}^{C-1} \frac{s_{24}[f \cdot C
 ### 2.3 Enventanado de Hann (Reducción de Dispersión Espectral)
 Para evitar el lóbulo secundario (*spectral leakage*) propio de ventanas rectangulares, se aplica la función periódica de Hann ponderada:
 
-$$w[n] = 0.5 \cdot \left(1 - \cos\left(\frac{2\pi n}{N_{\text{FFT}} - 1}\right)\right), \quad n \in [0, N_{\text{FFT}} - 1]$$
+$$w[n] = 0.5 \cdot \left(1 - \cos\left(\frac{2\pi n}{N_{\text{FFT}}}\right)\right), \quad n \in [0, N_{\text{FFT}} - 1]$$
 
-Nota. La forma anterior, con denominador $N_{\text{FFT}} - 1$, es la ventana simétrica y es la que implementa `audio-processing.cpp`. Para el análisis de magnitud es adecuada. Para la reconstrucción por solapamiento y suma que propone la 3.0 hace falta la forma periódica, con denominador $N_{\text{FFT}}$, porque solo ella cumple la condición de solapamiento constante (demostración en el documento 10, sección 4.2). La diferencia numérica en el espectro es del orden de $10^{-3}$ relativo y no se aprecia en pantalla.
+Nota. Esta es la forma periódica (denominador $N_{\text{FFT}}$), implementada en `src/analysis/window_function.cpp`. Es la única que cumple la condición de solapamiento constante necesaria para la reconstrucción exacta por solapamiento y suma (demostración en el documento 10, sección 4.2). La forma simétrica (denominador $N_{\text{FFT}} - 1$), usada en la 2.0 original, difiere en el espectro en el orden de $10^{-3}$ relativo y no se aprecia en pantalla.
 
 Normalización energética para que una onda senoidal pura a escala completa (amplitud 1.0) genere un pico de magnitud 1.0 exacto:
 
@@ -188,7 +188,7 @@ Correspondencia entre este documento y la extensión:
 |---|---|---|
 | 2.1 Captura y mezcla | Sí | No |
 | 2.2 Anillo y salto | Sí | No |
-| 2.3 Ventana de Hann | Forma | Denominador $N$ en lugar de $N-1$ |
+| 2.3 Ventana de Hann | Sí, ya periódica | No |
 | 2.4 FFT r2c | Sí | Se conserva la fase además de la magnitud |
 | 2.5 Mapeo a barras | Pasa al renderizador de barras | El procesado publica bins y bandas, no píxeles |
 | 2.6 Escala dB | Sí | Se publica dB sin normalizar y la normalización es por renderizador |

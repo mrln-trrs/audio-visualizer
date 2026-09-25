@@ -47,17 +47,62 @@ target_include_directories(imgui_lib PUBLIC
 # Ejecutable
 # -----------------------------------------------------------------------------
 set(PROJECT_SOURCES
-    main.cpp
-    audio-capture.h
-    audio-capture.cpp
-    audio-processing.h
-    audio-processing.cpp
-    renderer.h
-    renderer.cpp
-    config.h
-    config.cpp
-    common.h
+    src/analysis/analysis_thread.cpp
+    src/analysis/band_mapper.cpp
+    src/analysis/window_function.cpp
+    src/app/application.cpp
+    src/audio/capture_session.cpp
+    src/audio/capture_thread.cpp
+    src/audio/device_enumerator.cpp
+    src/audio/sample_format.cpp
+    src/core/config.cpp
+    src/core/types.cpp
+    src/main.cpp
+    src/render/data_textures.cpp
+    src/render/frame_limiter.cpp
+    src/render/fullscreen_quad.cpp
+    src/render/gl_window.cpp
+    src/render/modes/bars_mode.cpp
+    src/render/modes/radial_mode.cpp
+    src/render/modes/waterfall_mode.cpp
+    src/render/modes/waveform_mode.cpp
+    src/render/renderer.cpp
+    src/render/shader_program.cpp
+    src/render/spectrum_dynamics.cpp
+    src/ui/hud.cpp
+    src/ui/telemetry.cpp
+    src/ui/theme.cpp
+    src/analysis/analysis_thread.h
+    src/analysis/band_mapper.h
+    src/analysis/window_function.h
+    src/app/application.h
+    src/audio/capture_session.h
+    src/audio/capture_thread.h
+    src/audio/device_enumerator.h
+    src/audio/sample_format.h
+    src/core/config.h
+    src/core/constants.h
+    src/core/shared_state.h
+    src/core/types.h
+    src/render/data_textures.h
+    src/render/embedded_shaders.h
+    src/render/frame_limiter.h
+    src/render/fullscreen_quad.h
+    src/render/gl_window.h
+    src/render/modes/bars_mode.h
+    src/render/modes/radial_mode.h
+    src/render/modes/visual_mode.h
+    src/render/modes/waterfall_mode.h
+    src/render/modes/waveform_mode.h
+    src/render/renderer.h
+    src/render/shader_program.h
+    src/render/spectrum_dynamics.h
+    src/ui/hud.h
+    src/ui/telemetry.h
+    src/ui/theme.h
 )
+
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "Fuentes" FILES ${PROJECT_SOURCES})
 
 # Aplicación de ventana (sin consola) con main() clásico como punto de entrada.
 add_executable(audio-visualizer WIN32 ${PROJECT_SOURCES})
@@ -69,7 +114,7 @@ if(MSVC)
 endif()
 
 target_include_directories(audio-visualizer PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${GLFW_DIR}/include
     ${GLEW_DIR}/include
     ${FFTW_DIR}

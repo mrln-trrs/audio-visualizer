@@ -35,7 +35,7 @@ Esto convierte cada visualización nueva en un shader más, sin modificar el an�
 | Dinámica | `attack_ms` y `release_ms` globales | Un bombo y un plato comparten la misma inercia |
 | Bandas | Implícitas, una por píxel | No configurables ni nombrables; no hay energía por banda |
 | Historial | Solo en la textura del espectrograma, ya cuantizado | No reutilizable por otros modos |
-| Ventana | Hann simétrica (denominador $N-1$) | Impide la reconstrucción exacta (teoría, sección 3.3) |
+| Ventana | Hann periódica (denominador $N$), en `src/analysis/window_function.cpp` | Ya cumple la condición de la teoría, sección 4.2; sin trabajo pendiente |
 
 ## 3. La trama de análisis
 

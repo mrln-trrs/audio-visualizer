@@ -1,27 +1,41 @@
-#include "config.h"
+#include "core/config.h"
+#include "core/types.h"
+
 #include <iostream>
 #include <fstream>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
+namespace core {
 namespace {
 
 template <typename T>
 void Read(const json& j, const char* key, T& out) {
-    if (j.contains(key)) {
-        try {
-            out = j.at(key).get<T>();
-        }
-        catch (const json::exception& e) {
-            std::cerr << "Config: la clave '" << key << "' tiene un tipo inesperado (" << e.what() << "), se mantiene el valor por defecto." << std::endl;
-        }
+    if (!j.contains(key)) return;
+    try {
+        out = j.at(key).get<T>();
+    }
+    catch (const json::exception& e) {
+        std::cerr << "Config: la clave '" << key << "' tiene un tipo inesperado (" << e.what()
+                  << "), se mantiene el valor por defecto." << std::endl;
+    }
+}
+
+void ReadColor(const json& j, const char* key, std::vector<float>& out) {
+    std::vector<float> color;
+    Read(j, key, color);
+    if (color.size() == 3) {
+        out = color;
+    }
+    else if (!color.empty()) {
+        std::cerr << "Config: " << key << " debe tener 3 componentes, se mantiene el color por defecto." << std::endl;
     }
 }
 
 } // namespace
 
-void LoadConfig(SharedConfigData& sharedConfigData, const std::string& filename) {
+void LoadConfig(SharedConfigData& shared, const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Config: no se pudo abrir " << filename << ", se usan los valores por defecto." << std::endl;
@@ -37,13 +51,11 @@ void LoadConfig(SharedConfigData& sharedConfigData, const std::string& filename)
         return;
     }
 
-    if (!data.contains("estilos")) {
-        return;
-    }
+    if (!data.contains("estilos")) return;
     const json& estilos = data["estilos"];
 
-    std::lock_guard<std::mutex> lock(sharedConfigData.mtx);
-    VisualizerConfig& c = sharedConfigData.config;
+    std::lock_guard<std::mutex> lock(shared.mtx);
+    VisualizerConfig& c = shared.config;
 
     Read(estilos, "attack_ms", c.attack_ms);
     Read(estilos, "release_ms", c.release_ms);
@@ -60,33 +72,24 @@ void LoadConfig(SharedConfigData& sharedConfigData, const std::string& filename)
     Read(estilos, "peak_hold_time_ms", c.peak_hold_time_ms);
     Read(estilos, "peak_decay_speed", c.peak_decay_speed);
     Read(estilos, "selected_device_name", c.selected_device_name);
-
-    std::vector<float> color;
-    Read(estilos, "base_color_rgb", color);
-    if (color.size() == 3) {
-        c.base_color_rgb = color;
-    }
-    else if (!color.empty()) {
-        std::cerr << "Config: base_color_rgb debe tener 3 componentes, se mantiene el color por defecto." << std::endl;
-    }
-
-    std::vector<float> peak_col;
-    Read(estilos, "peak_color_rgb", peak_col);
-    if (peak_col.size() == 3) {
-        c.peak_color_rgb = peak_col;
-    }
+    ReadColor(estilos, "base_color_rgb", c.base_color_rgb);
+    ReadColor(estilos, "peak_color_rgb", c.peak_color_rgb);
 
     if (c.frequency_scale != "linear" && c.frequency_scale != "log") {
         std::cerr << "Config: frequency_scale debe ser \"linear\" o \"log\", se usa \"linear\"." << std::endl;
         c.frequency_scale = "linear";
     }
+    if (c.visual_mode < 0 || c.visual_mode >= MODE_COUNT) {
+        std::cerr << "Config: visual_mode fuera de rango, se usa 0." << std::endl;
+        c.visual_mode = 0;
+    }
 }
 
-bool SaveConfig(const SharedConfigData& sharedConfigData, const std::string& filename) {
+bool SaveConfig(SharedConfigData& shared, const std::string& filename) {
     VisualizerConfig c;
     {
-        std::lock_guard<std::mutex> lock(const_cast<std::mutex&>(sharedConfigData.mtx));
-        c = sharedConfigData.config;
+        std::lock_guard<std::mutex> lock(shared.mtx);
+        c = shared.config;
     }
 
     json j;
@@ -115,7 +118,6 @@ bool SaveConfig(const SharedConfigData& sharedConfigData, const std::string& fil
         std::cerr << "Config: no se pudo abrir " << filename << " para escritura." << std::endl;
         return false;
     }
-
     try {
         file << j.dump(2) << std::endl;
         return true;
@@ -125,3 +127,5 @@ bool SaveConfig(const SharedConfigData& sharedConfigData, const std::string& fil
         return false;
     }
 }
+
+} // namespace core

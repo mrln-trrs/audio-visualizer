@@ -49,7 +49,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\include;$(ProjectDir)glew-2.1.0\include;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include;$(ProjectDir)imgui-1.91.5;$(ProjectDir)imgui-1.91.5\backends</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)glfw-3.4.bin.WIN64\include;$(ProjectDir)glew-2.1.0\include;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include;$(ProjectDir)imgui-1.91.5;$(ProjectDir)imgui-1.91.5\backends</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
@@ -79,7 +79,7 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\include;$(ProjectDir)glew-2.1.0\include;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include;$(ProjectDir)imgui-1.91.5;$(ProjectDir)imgui-1.91.5\backends</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)glfw-3.4.bin.WIN64\include;$(ProjectDir)glew-2.1.0\include;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include;$(ProjectDir)imgui-1.91.5;$(ProjectDir)imgui-1.91.5\backends</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -98,11 +98,31 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="audio-capture.cpp" />
-    <ClCompile Include="audio-processing.cpp" />
-    <ClCompile Include="config.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="renderer.cpp" />
+    <ClCompile Include="src\analysis\analysis_thread.cpp" />
+    <ClCompile Include="src\analysis\band_mapper.cpp" />
+    <ClCompile Include="src\analysis\window_function.cpp" />
+    <ClCompile Include="src\app\application.cpp" />
+    <ClCompile Include="src\audio\capture_session.cpp" />
+    <ClCompile Include="src\audio\capture_thread.cpp" />
+    <ClCompile Include="src\audio\device_enumerator.cpp" />
+    <ClCompile Include="src\audio\sample_format.cpp" />
+    <ClCompile Include="src\core\config.cpp" />
+    <ClCompile Include="src\core\types.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\render\data_textures.cpp" />
+    <ClCompile Include="src\render\frame_limiter.cpp" />
+    <ClCompile Include="src\render\fullscreen_quad.cpp" />
+    <ClCompile Include="src\render\gl_window.cpp" />
+    <ClCompile Include="src\render\modes\bars_mode.cpp" />
+    <ClCompile Include="src\render\modes\radial_mode.cpp" />
+    <ClCompile Include="src\render\modes\waterfall_mode.cpp" />
+    <ClCompile Include="src\render\modes\waveform_mode.cpp" />
+    <ClCompile Include="src\render\renderer.cpp" />
+    <ClCompile Include="src\render\shader_program.cpp" />
+    <ClCompile Include="src\render\spectrum_dynamics.cpp" />
+    <ClCompile Include="src\ui\hud.cpp" />
+    <ClCompile Include="src\ui\telemetry.cpp" />
+    <ClCompile Include="src\ui\theme.cpp" />
     <ClCompile Include="imgui-1.91.5\imgui.cpp" />
     <ClCompile Include="imgui-1.91.5\imgui_draw.cpp" />
     <ClCompile Include="imgui-1.91.5\imgui_tables.cpp" />
@@ -111,11 +131,34 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
     <ClCompile Include="imgui-1.91.5\backends\imgui_impl_opengl3.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="audio-capture.h" />
-    <ClInclude Include="audio-processing.h" />
-    <ClInclude Include="common.h" />
-    <ClInclude Include="config.h" />
-    <ClInclude Include="renderer.h" />
+    <ClInclude Include="src\analysis\analysis_thread.h" />
+    <ClInclude Include="src\analysis\band_mapper.h" />
+    <ClInclude Include="src\analysis\window_function.h" />
+    <ClInclude Include="src\app\application.h" />
+    <ClInclude Include="src\audio\capture_session.h" />
+    <ClInclude Include="src\audio\capture_thread.h" />
+    <ClInclude Include="src\audio\device_enumerator.h" />
+    <ClInclude Include="src\audio\sample_format.h" />
+    <ClInclude Include="src\core\config.h" />
+    <ClInclude Include="src\core\constants.h" />
+    <ClInclude Include="src\core\shared_state.h" />
+    <ClInclude Include="src\core\types.h" />
+    <ClInclude Include="src\render\data_textures.h" />
+    <ClInclude Include="src\render\embedded_shaders.h" />
+    <ClInclude Include="src\render\frame_limiter.h" />
+    <ClInclude Include="src\render\fullscreen_quad.h" />
+    <ClInclude Include="src\render\gl_window.h" />
+    <ClInclude Include="src\render\modes\bars_mode.h" />
+    <ClInclude Include="src\render\modes\radial_mode.h" />
+    <ClInclude Include="src\render\modes\visual_mode.h" />
+    <ClInclude Include="src\render\modes\waterfall_mode.h" />
+    <ClInclude Include="src\render\modes\waveform_mode.h" />
+    <ClInclude Include="src\render\renderer.h" />
+    <ClInclude Include="src\render\shader_program.h" />
+    <ClInclude Include="src\render\spectrum_dynamics.h" />
+    <ClInclude Include="src\ui\hud.h" />
+    <ClInclude Include="src\ui\telemetry.h" />
+    <ClInclude Include="src\ui\theme.h" />
     <ClInclude Include="imgui-1.91.5\imconfig.h" />
     <ClInclude Include="imgui-1.91.5\imgui.h" />
     <ClInclude Include="imgui-1.91.5\imgui_internal.h" />
@@ -127,12 +170,12 @@ xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
     <None Include="config.json" />
     <None Include="README.md" />
     <None Include="CMakeLists.txt" />
-    <None Include="shaders\bars.vert" />
     <None Include="shaders\bars.frag" />
+    <None Include="shaders\bars.vert" />
     <None Include="shaders\quad.vert" />
     <None Include="shaders\radial.frag" />
-    <None Include="shaders\waveform.frag" />
     <None Include="shaders\waterfall.frag" />
+    <None Include="shaders\waveform.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

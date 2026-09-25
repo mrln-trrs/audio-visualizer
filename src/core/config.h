@@ -6,8 +6,10 @@
 #include <atomic>
 #include <cstdint>
 
-// Configuración del visualizador. Los valores por defecto se usan cuando
-// la clave no aparece en config.json.
+// Configuración del visualizador y su persistencia en config.json.
+// Referencia de cada clave: docs/07_user_manual_and_config.md, sección 4.
+namespace core {
+
 struct VisualizerConfig {
     // Tiempo de respuesta al subir (ms). Bajo = ataque inmediato.
     float attack_ms = 12.0f;
@@ -31,23 +33,30 @@ struct VisualizerConfig {
     // Límite de cuadros por segundo si el driver ignora la sincronía vertical.
     // 0 = usar la tasa de refresco del monitor donde está la ventana.
     int max_fps = 0;
-    // Modo de visualización: 0 = Barras, 1 = Radial, 2 = Osciloscopio, 3 = Cascada
+    // Modo de visualización: ver core::VisualizerMode.
     int visual_mode = 0;
-    // Efecto Peak-Hold en modo barras
+    // Marcadores de pico en el modo barras.
     bool peak_hold_enabled = true;
     float peak_hold_time_ms = 350.0f;
     float peak_decay_speed = 1.8f;
     std::vector<float> peak_color_rgb{ 1.0f, 0.85f, 0.2f };
-    // Dispositivo de audio seleccionado (vacío = dispositivo predeterminado)
-    std::string selected_device_name = "";
+    // Dispositivo de audio seleccionado (vacío = predeterminado de Windows).
+    std::string selected_device_name;
 };
 
-// La configuración se puede leer y guardar en tiempo real desde la UI.
+// La configuración se lee y se guarda en tiempo real desde la UI. El contador de versión
+// permite al hilo de análisis detectar cambios sin tomar el mutex en cada trama.
 struct SharedConfigData {
     VisualizerConfig config;
     std::mutex mtx;
-    std::atomic<uint64_t> version{ 0 }; // Se incrementa cuando la config cambia
+    std::atomic<uint64_t> version{ 0 };
 };
 
-void LoadConfig(SharedConfigData& sharedConfigData, const std::string& filename);
-bool SaveConfig(const SharedConfigData& sharedConfigData, const std::string& filename);
+// Carga config.json. Las claves ausentes conservan su valor por defecto; un tipo incorrecto
+// se avisa por cerr sin abortar.
+void LoadConfig(SharedConfigData& shared, const std::string& filename);
+
+// Escribe la configuración actual en disco. Devuelve false si no se pudo abrir el archivo.
+bool SaveConfig(SharedConfigData& shared, const std::string& filename);
+
+} // namespace core

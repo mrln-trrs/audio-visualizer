@@ -116,12 +116,42 @@ audio-visualizer/
 |   |-- waveform.frag               Fragment shader para osciloscopio analógico CRT
 |   `-- waterfall.frag              Fragment shader para espectrograma térmico cascada
 |
-|-- main.cpp                        Punto de entrada, inicialización y cierre seguro
-|-- common.h                        Tipos compartidos, tamaños de búfer y estados atómicos
-|-- config.h / config.cpp           Estructuras de configuración, lectura y guardado JSON
-|-- audio-capture.h / .cpp          Captura WASAPI, enumeración y conmutación de dispositivos
-|-- audio-processing.h / .cpp       FFTW r2c, ventana Hann, dB, mapeo de bandas y waveform
-|-- renderer.h / .cpp               Bucle OpenGL 3.3, pipeline de shaders, Dear ImGui y limitador
+|-- src/                            Codigo fuente, una carpeta por capa
+|   |-- main.cpp                    Punto de entrada: app::Run()
+|   |-- app/application.*           Ciclo de vida: configuracion, hilos y cierre ordenado
+|   |-- core/                       Sin dependencias de Windows ni OpenGL
+|   |   |-- constants.h             FFT_SIZE, HOP_SIZE, RING_SIZE
+|   |   |-- types.*                 VisualizerMode, AudioDeviceInfo
+|   |   |-- shared_state.h          AudioData, VisualizerData (puntos de intercambio)
+|   |   `-- config.*                VisualizerConfig, LoadConfig, SaveConfig
+|   |-- audio/                      Captura WASAPI
+|   |   |-- sample_format.*         Deteccion de formato y mezcla a mono
+|   |   |-- device_enumerator.*     Endpoints y nombres amigables
+|   |   |-- capture_session.*       Una sesion de loopback sobre un endpoint
+|   |   `-- capture_thread.*        COM, MMCSS, reintentos y cambio de dispositivo
+|   |-- analysis/                   Procesado de senal
+|   |   |-- window_function.*       Hann periodica y normalizacion
+|   |   |-- band_mapper.*           Bins a barras, lineal o logaritmico, interpolacion
+|   |   `-- analysis_thread.*       Ventana deslizante, FFT, dB, publicacion
+|   |-- render/                     OpenGL 3.3 Core
+|   |   |-- gl_window.*             Ventana GLFW, GLEW, refresco del monitor
+|   |   |-- shader_program.*        Carga y compilacion GLSL
+|   |   |-- embedded_shaders.h      Copias de shaders/ para arrancar sin la carpeta
+|   |   |-- fullscreen_quad.*       Quad compartido por los modos procedurales
+|   |   |-- data_textures.*         Texturas de espectro, onda y cascada
+|   |   |-- spectrum_dynamics.*     Ataque, caida y peak-hold por tiempo real
+|   |   |-- frame_limiter.*         Limitador adaptativo cuando el driver ignora vsync
+|   |   |-- renderer.*              Bucle principal de render
+|   |   `-- modes/                  Un modulo por modo visual (IVisualMode)
+|   |       |-- visual_mode.h       Interfaz y RenderContext
+|   |       |-- bars_mode.*         1. Barras con peak-hold
+|   |       |-- radial_mode.*       2. Radial
+|   |       |-- waveform_mode.*     3. Osciloscopio
+|   |       `-- waterfall_mode.*    4. Cascada
+|   `-- ui/                         Dear ImGui
+|       |-- theme.*                 Estilo y HelpMarker
+|       |-- telemetry.*             Metricas y titulo de la ventana
+|       `-- hud.*                   Panel de control por pestanas
 |
 |-- fftw-3.3.5-dll64/               FFTW 3.3.5 (DLL, headers y .lib x64)
 |-- glew-2.1.0/                     GLEW 2.1.0 (Extension loader para OpenGL 3.3+)
