@@ -1,5 +1,10 @@
 # Guía de Recomendaciones, Mejoras Arquitectónicas y Cómo Implementarlas - Audio Visualizer 2.0
 
+> **Estado:** Propuesta. Ninguna de estas recomendaciones está implementada. Varias se desarrollan con rigor en los documentos 10 a 12.  
+> **Alcance:** Recomendaciones de ingeniería y hoja de ruta técnica priorizada.  
+> **Documentos relacionados:** [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
+> **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
+
 Este documento reúne las mejores prácticas de la industria, recomendaciones técnicas avanzadas y guías paso a paso (*how-to*) para evolucionar **Audio Visualizer 2.0** hacia los más altos estándares de fidelidad gráfica, rendimiento de audio y ergonomía de usuario.
 
 ---
@@ -284,3 +289,18 @@ Aunque el requerimiento actual se enfoca en Windows WASAPI, para mantener la arq
    - `PulseAudioCaptureDriver` o `PipeWireCaptureDriver` (Linux con monitor de sink).
    - `CoreAudioCaptureDriver` (macOS).
 3. Todo el código de FFTW, OpenGL 3.3, Shaders GLSL, GLFW, Dear ImGui y CMake es **100% multiplataforma de forma nativa**, por lo que solo la capa de captura cambiaría.
+
+---
+
+## Relación con los Documentos 10 a 12
+
+Varias recomendaciones de este documento quedan absorbidas o precisadas por el diseño formal de la 3.0:
+
+| Recomendación aquí | Dónde se desarrolla | Observación |
+|---|---|---|
+| Cola SPSC sin bloqueos (2.1) | Documento 11, sección 5.2 | Se adopta un triple búfer con índice atómico para el intercambio procesado-render, que resuelve la copia. Para el intercambio captura-procesado el mutex actual se mantiene: el bloqueo dura una escritura de 480 muestras y su coste está por debajo del jitter de 10 ms del propio motor de audio, así que la cola sin bloqueos no mejoraría la latencia observable |
+| Ventanas alternativas, Blackman-Harris (2.2) | Documento 10, secciones 3 y 4.2 | Compatible con la reconstrucción exacta solo si la ventana elegida cumple la condición de solapamiento constante para el salto usado. Blackman-Harris de cuatro términos la cumple para $N/H \geq 8$, que es el caso actual. Debe verificarse la constante de normalización $\sum_m w^2$ para cada ventana |
+| Post-procesado Bloom (3.1) | Documento 12, secciones 4 y 6 | Comparte con el material acrílico la cadena de FBO, reducción y desenfoque separable. Implementar primero el material y reutilizar la cadena para el Bloom |
+| Compute shaders y SSBO | Documento 11, sección 12 | Descartado para la 3.0: exige OpenGL 4.3 y rompe la compatibilidad 3.3 Core. Los presupuestos de cómputo del documento 10, sección 6.4, muestran que la CPU basta con holgura |
+| Presets múltiples en JSON | Documento 11, sección 9 | La sección `bandas` está diseñada para guardarse como preset nombrado |
+| Iconos en ImGui, CI/CD, multiplataforma | Sin cambios | Independientes del análisis y del diseño visual |

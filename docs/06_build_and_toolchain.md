@@ -1,5 +1,10 @@
 # Guía de Compilación, Toolchain y Despliegue - Audio Visualizer 2.0
 
+> **Estado:** Implementado. Describe las dos rutas de compilación de la 2.0, ambas verificadas con cero avisos. La última sección lista los requisitos adicionales que introduciría la 3.0.  
+> **Alcance:** Requisitos, compilación con CMake y con la solución de Visual Studio, post-build, empaquetado y resolución de errores.  
+> **Documentos relacionados:** [08_contributing_and_standards.md](08_contributing_and_standards.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
+> **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
+
 Esta guía explica en detalle cómo configurar el entorno, compilar el proyecto en diferentes editores y herramientas (CMake CLI, Visual Studio, VS Code, Ninja), y cómo empaquetar o distribuir el ejecutable resultante.
 
 ---
@@ -119,3 +124,16 @@ Para distribuir la aplicación a otro equipo con Windows:
 | `0xc000007b (Error al iniciar la aplicación)` | Conflicto de arquitectura de DLLs (ej. DLL de 32 bits mezclada con ejecutable de 64 bits). | Limpia la carpeta `build/` y vuelve a compilar con CMake para que copie las DLLs x64 oficiales. |
 | `LNK1104: cannot open file audio-visualizer.exe` | La aplicación anterior sigue en ejecución en segundo plano o el depurador está anclado a ella. | Abre el Administrador de Tareas y finaliza `audio-visualizer.exe`, o cierra la ventana activa antes de compilar. |
 | `El ejecutable se cierra inmediatamente sin mostrar ventana` | El dispositivo de audio predeterminado no está activo o está deshabilitado en Windows. | Conecta o activa unos auriculares/altavoces en la bandeja del sistema de Windows. |
+
+---
+
+## 8. Requisitos Adicionales Previstos para la Versión 3.0
+
+| Componente | Requisito | Motivo | Degradación si falta |
+|---|---|---|---|
+| Materiales del sistema (Mica, Acrílico) | Windows 11 22H2 (build 22621) o superior; enlazar `dwmapi.lib` | `DwmSetWindowAttribute` con el atributo 38 solo existe desde esa build (documento 12, sección 2) | Fondo opaco, sin error |
+| Framebuffer transparente | Driver OpenGL con soporte de composición; `GLFW_TRANSPARENT_FRAMEBUFFER` | Necesario para ver el material del sistema a través de la ventana | Ventana opaca; el material propio del panel sigue funcionando |
+| Post-procesado | OpenGL 3.3 Core, sin cambios | FBO y texturas ya disponibles en 3.3 | No aplica |
+| Reconstrucción de bandas | FFTW ya incluida (`fftwf_plan_dft_c2r_1d`) | La IFFT usa la misma biblioteca | No aplica |
+
+No se prevén dependencias nuevas de terceros. Toda la 3.0 se construye con las bibliotecas ya versionadas en el repositorio.

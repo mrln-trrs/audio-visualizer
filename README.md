@@ -82,6 +82,9 @@ El repositorio cuenta con una suite documental estructurada en la carpeta [`docs
 | [07. Manual de Usuario y Configuración](docs/07_user_manual_and_config.md) | Guía del panel interactivo, atajos, telemetría y referencia de `config.json`. |
 | [08. Guía de Contribución y Estándares](docs/08_contributing_and_standards.md) | Estándares C++17, concurrencia, RAII y tutorial para añadir nuevos modos visuales. |
 | [09. Recomendaciones y Mejoras](docs/09_recommendations_and_future_improvements.md) | Cola SPSC Lock-Free, Bloom/Glow, Compute Shaders, iconografía y CI/CD con GitHub Actions. |
+| [10. Teoría de Descomposición en Bandas](docs/10_signal_decomposition_theory.md) | Demostraciones: inversión de la DFT, Parseval, reconstrucción perfecta por solapamiento, teorema de la suma de bandas, incertidumbre de Gabor, conservación de la información, volúmenes de datos, CQT. Propuesta 3.0. |
+| [11. Arquitectura de la Trama de Análisis](docs/11_analysis_frame_architecture.md) | `AnalysisFrame`, bandas configurables, triple búfer, texturas, dinámica por banda, osciloscopio apilado, configuración, presupuesto y fases. Propuesta 3.0. |
+| [12. Diseño Fluent y Post-procesado](docs/12_fluent_design_ui.md) | Mica y Acrílico del sistema, material acrílico propio, desenfoque separable demostrado, ruido, integración con ImGui, movimiento, DPI, contraste WCAG. Propuesta 3.0. |
 | [Índice Maestro de Docs](docs/README.md) | Mapa de navegación completo de la documentación técnica. |
 
 ---
@@ -185,6 +188,19 @@ Los valores se pueden modificar desde el panel de control Dear ImGui (`H` / `Tab
   }
 }
 ```
+
+---
+
+## Hoja de Ruta: Versión 3.0 (Propuesta)
+
+La versión 2.0 reduce el análisis a un vector de alturas de barra. La 3.0 propuesta recupera toda la información que la transformada de Fourier extrae del audio y la expone a cualquier renderizador:
+
+- **Descomposición en bandas con reconstrucción exacta.** La pista se separa en las ondas de cada rango de frecuencias y la suma de esas ondas es idéntica a la señal original. Está demostrado en el documento 10 y diseñado en el 11.
+- **Límite físico explícito.** No existe "ver cada frecuencia" en tiempo real: resolución en frecuencia y retraso están ligados por el principio de incertidumbre. La interfaz mostrará siempre la latencia asociada a la resolución elegida.
+- **Osciloscopio apilado**, medidores por banda, dinámica de ataque y caída por banda, y detección de golpes por flujo espectral.
+- **Diseño Fluent.** Panel con material acrílico propio (desenfoque, tinte, exclusión, ruido), materiales Mica y Acrílico del sistema en Windows 11, transiciones con curvas de aceleración y contraste mínimo 4,5:1. Documento 12.
+
+Estado: solo documentación. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
 
 ---
 

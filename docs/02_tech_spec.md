@@ -1,5 +1,10 @@
 # Especificación Técnica (Tech Spec) - Audio Visualizer 2.0
 
+> **Estado:** Mixto. Las secciones 1 a 6 describen la versión 2.0 implementada. Las secciones 7 y 8 resumen el diseño propuesto para la 3.0 y remiten a los documentos 11 y 12.  
+> **Alcance:** Decisiones de ingeniería: stack, hilos, pipeline gráfico, GUI, WASAPI y sistema de construcción.  
+> **Documentos relacionados:** [01_prd_lean.md](01_prd_lean.md), [05_architecture_and_pipeline.md](05_architecture_and_pipeline.md), [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
+> **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
+
 ## 1. Stack Tecnológico y Matriz "Build vs. Adopt"
 
 | Dominio | Tecnología / Estándar | Justificación (Build vs. Adopt) |
@@ -9,9 +14,10 @@
 | **Análisis Espectral** | FFTW 3.3.5 (Float / `fftwf_*`) | **Adoptar**: La biblioteca más rápida del mundo para FFT en CPU con vectorización AVX/SSE. |
 | **Ventana y Contexto** | GLFW 3.4 | **Adoptar**: Ligero, maneja DPI, eventos de ventana, multimonitor e intervalos de vsync fiables. |
 | **Carga de Extensiones GL**| GLEW 2.1.0 | **Adoptar**: Ya integrado en el repositorio. Carga transparente de símbolos OpenGL 3.3+. |
-| **Interfaz de Usuario (GUI)**| Dear ImGui (v1.90+ Docking/Standard) | **Adoptar**: Estándar de facto absoluto en herramientas interactivas C++. Cero dependencias pesadas, renderizado inmediato sobre el contexto OpenGL existente. |
+| **Interfaz de Usuario (GUI)**| Dear ImGui 1.91.5, rama estándar, vendorizado en `imgui-1.91.5/` | **Adoptar**: Estándar de facto en herramientas interactivas C++. Sin dependencias, renderizado inmediato sobre el contexto OpenGL existente. Se compila desde el repositorio, sin descargas. |
+| **Composición del escritorio (3.0)** | `dwmapi.dll` (`DwmSetWindowAttribute`) | **Adoptar**: Única vía documentada para Mica y Acrílico del sistema en Windows 11. Opcional y con degradación a fondo opaco. Ver documento 12. |
 | **Serialización de Config** | nlohmann/json 3.12.0 | **Adoptar**: Header-only, sintaxis intuitiva y tolerante a claves faltantes. |
-| **Build System** | CMake 3.20+ | **Adoptar**: Estándar universal de construcción multiplataforma. Reemplaza la rigidez de `.sln`/`.vcxproj`. |
+| **Build System** | CMake 3.20+ y solución `.sln` en paralelo | **Adoptar**: CMake como ruta independiente del IDE; el `.sln` se mantiene sincronizado para el flujo de Visual Studio. Ambas compilan las mismas fuentes, incluido ImGui, sin red. |
 
 ---
 
@@ -151,3 +157,44 @@ Estructura diseñada para funcionar inmediatamente tras clonar el repositorio:
   - `nlohmann_json`: Ruta a `json-develop/include`.
 - **Dear ImGui**: Vendorizado en `imgui-1.91.5/` (núcleo `imgui.cpp`, `imgui_draw.cpp`, `imgui_tables.cpp`, `imgui_widgets.cpp` y backends `imgui_impl_glfw.cpp`, `imgui_impl_opengl3.cpp`) y compilado como biblioteca estática `imgui_lib`. Se descartó `FetchContent` porque exige red y git en tiempo de configuración y el clon fallaba de forma intermitente. La solución `.sln` compila los mismos archivos directamente.
 - **Comandos Post-Build**: Copia automática de `libfftw3f-3.dll`, `glew32.dll`, `glfw3.dll`, `config.json` y la carpeta `shaders/` al directorio del binario objetivo (`$<TARGET_FILE_DIR:audio-visualizer>`).
+
+---
+
+## 7. Capa de Análisis y Descomposición en Bandas (Propuesta 3.0)
+
+Resumen ejecutivo del diseño detallado en [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), cuya base matemática se demuestra en [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md).
+
+| Aspecto | Versión 2.0 | Versión 3.0 |
+|---|---|---|
+| Salida del procesado | `vector<float>` de alturas por píxel | `AnalysisFrame`: magnitud, fase, dB, energía y RMS por banda, ondas por banda, RMS, pico, flujo espectral, centroide |
+| Intercambio | `swap` bajo mutex más copia en el render | Triple búfer sin copia, índice atómico |
+| Bandas | Implícitas, una por píxel | Configurables: octavas, lineal, manual, por bin; con nombre, color, rampas |
+| Ondas | Solo mezcla | Mezcla y una por banda, reconstruidas por IFFT enmascarada con solapamiento (reconstrucción exacta, teorema 4.3 del documento 10) |
+| Dinámica | Dos escalares globales | Vectores de ataque y caída por banda |
+| Ventana | Hann simétrica | Hann periódica (condición necesaria para la reconstrucción exacta) |
+| Texturas | Espectro y forma de onda 1D, cascada 2D | Historial de espectro y fase, ondas por banda, estado por banda, UBO de bandas |
+
+Límites que la especificación asume explícitamente:
+
+- Resolución y latencia están ligadas por $\sigma_t \sigma_f \geq 1/(4\pi)$ (documento 10, sección 5). No existe "ver cada frecuencia" en tiempo real; se ofrece resolución variable por rango como compromiso (sección 7 del mismo documento).
+- El volumen de datos se acota conservando la STFT compleja (1,5 MB/s) y reconstruyendo solo las bandas visibles (documento 10, sección 6.3).
+
+## 8. Pipeline de Post-procesado y Materiales (Propuesta 3.0)
+
+Resumen del diseño de [12_fluent_design_ui.md](12_fluent_design_ui.md).
+
+```mermaid
+flowchart LR
+    S[Escena a FBO<br/>resolucion completa] --> D[Reduccion x4]
+    D --> BH[Desenfoque horizontal<br/>9 lecturas bilineales]
+    BH --> BV[Desenfoque vertical]
+    BV --> M[Material acrilico<br/>exclusion, tinte, ruido]
+    S --> P[Presentacion de la escena]
+    P --> I[Dear ImGui<br/>fondo alfa 0 + callback del material]
+    M --> I
+```
+
+- El desenfoque es separable (demostración en el documento 12, sección 4.2): dos pasadas de $2r+1$ lecturas en lugar de $(2r+1)^2$.
+- Coste añadido inferior a 0,3 ms por cuadro a 1920 por 1080 en GPU integrada.
+- Materiales del sistema (Mica, Acrílico) mediante `DwmSetWindowAttribute` con atributo 38, solo Windows 11 22H2 o superior, con degradación a opaco.
+- Contraste mínimo 4,5:1 garantizado por la mezcla por exclusión y la opacidad mínima del tinte.

@@ -1,5 +1,10 @@
 # Manual de Usuario y Referencia de Configuración - Audio Visualizer 2.0
 
+> **Estado:** Implementado. Todo lo descrito en las secciones 1 a 5 está disponible en la 2.0. La sección 6 describe funciones previstas y no disponibles todavía.  
+> **Alcance:** Operación, atajos, panel de control, referencia de `config.json` y telemetría.  
+> **Documentos relacionados:** [03_ux_flows.md](03_ux_flows.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
+> **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
+
 Este documento proporciona una guía exhaustiva para el usuario final sobre la operación del visualizador, el uso del panel interactivo **Dear ImGui**, la calibración de parámetros y la referencia técnica de `config.json`.
 
 ---
@@ -168,3 +173,51 @@ Audio Visualizer 2.0  |  [Barras]  |  144 fps (144 Hz, vsync)  |  100 esp/s  |  
 - **`N Hz, vsync / limitador`**: Tasa de refresco detectada del monitor y mecanismo de sincronía activo.
 - **`N esp/s`**: Transformadas rápidas de Fourier calculadas y publicadas por segundo (~100 espectros/s a 48 kHz).
 - **`audio N Hz`**: Frecuencia de muestreo nativa del hardware de sonido de Windows.
+
+---
+
+## 6. Funciones Previstas en la Versión 3.0 (No Disponibles Todavía)
+
+Esta sección documenta con antelación lo que la 3.0 añadiría a la experiencia de usuario, para que el diseño pueda revisarse antes de implementarse. Ninguna de estas opciones existe en el ejecutable actual.
+
+### 6.1 Bandas configurables
+
+Desde una pestaña "Bandas" del panel se elegirá cómo dividir el espectro:
+
+| Modo | Qué hace | Cuándo usarlo |
+|---|---|---|
+| Octavas | Una banda por octava (o por fracción de octava) entre una frecuencia mínima y una máxima | Música: cada banda equivale a un rango musical |
+| Lineal | Bandas de igual anchura en hercios | Análisis técnico |
+| Manual | Cortes arrastrables sobre una regla logarítmica, con nombre y color | Presets personales; el preset por defecto es el de siete bandas de mezcla (Sub, Bajo, Medios bajos, Medios, Medios altos, Presencia, Brillo) |
+
+Cada banda tendrá su propio ataque y caída. Un aviso indicará cuándo una banda es demasiado estrecha para la ventana de análisis actual y qué latencia haría falta para resolverla, porque resolución en frecuencia y tiempo de respuesta están ligados por una ley física, no por una limitación del programa (documento 10, sección 5).
+
+### 6.2 Modos nuevos
+
+| Tecla | Modo | Qué muestra |
+|---|---|---|
+| `5` | Osciloscopio apilado | Una traza por banda, con su color, y debajo la mezcla. La suma de las trazas es exactamente la mezcla |
+| `6` | Medidores por banda | Columnas o arcos con la energía de cada banda y su marcador de pico |
+
+### 6.3 Claves de configuración previstas
+
+Se añadirían dos secciones a `config.json`, separadas de `"estilos"`:
+
+| Sección | Clave | Tipo | Defecto | Significado |
+|---|---|---|---|---|
+| `analisis` | `fft_size` | entero, potencia de dos | 2048 | Tamaño de la ventana. Más grande, más resolución en graves y más latencia |
+| `analisis` | `hop_size` | entero | 256 | Avance entre análisis. Debe dividir a `fft_size` con cociente al menos 4 |
+| `analisis` | `history_frames` | entero | 512 | Tramas conservadas para espectrogramas y estelas |
+| `analisis` | `mask_ramp_bins` | número | 1.5 | Suavidad del borde entre bandas contiguas |
+| `bandas` | `mode` | `octaves`, `linear`, `manual`, `per_bin` | `manual` | Modo de partición |
+| `bandas` | `cuts_hz` | lista creciente | 60, 250, 500, 2000, 4000, 6000 | Cortes del modo manual |
+| `bandas` | `names`, `colors_rgb`, `gain`, `attack_ms`, `release_ms` | listas de longitud `cuts_hz + 1` | preset de siete bandas | Propiedades por banda |
+| `estilos` | `material` | `none`, `acrylic_app`, `mica`, `acrylic_system` | `acrylic_app` | Material del panel y de la ventana |
+| `estilos` | `material_opacity` | número en [0.6, 0.95] | 0.75 | Opacidad del tinte; por debajo de 0.7 el contraste puede bajar de 4,5:1 |
+| `estilos` | `animations` | booleano | true | Transiciones con curvas de aceleración |
+| `estilos` | `respect_system_effects` | booleano | true | Desactiva transparencias y animaciones si Windows las tiene desactivadas |
+
+### 6.4 Lo que la 3.0 no hará
+
+- No separará instrumentos ni voces. Separar por frecuencia no es separar por fuente (documento 10, sección 10).
+- No mostrará "cada frecuencia" con resolución de 1 Hz en tiempo real. Exigiría ventanas de un segundo y medio segundo de retraso (documento 10, sección 5.3).

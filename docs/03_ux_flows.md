@@ -1,5 +1,10 @@
 # Matriz de UX Flows y 7 Estados del Sistema - Audio Visualizer 2.0
 
+> **Estado:** Mixto. Los siete estados y los atajos 1 a 4, Tab y H están implementados en la 2.0. La sección final describe las extensiones propuestas para la 3.0.  
+> **Alcance:** Comportamiento de la interfaz, estados del sistema y ergonomía de teclado.  
+> **Documentos relacionados:** [07_user_manual_and_config.md](07_user_manual_and_config.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
+> **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
+
 Para garantizar una experiencia visual y de control impecable, el sistema contempla formalmente los 7 estados de ejecución y las transiciones del usuario:
 
 ```mermaid
@@ -96,3 +101,39 @@ stateDiagram-v2
   - Hilo de render destruye shaders, VBOs, contexto ImGui (`ImGui_ImplOpenGL3_Shutdown()`) y termina GLFW.
   - Ambos hilos secundarios se unen (`join()`).
 - **Garantía**: Cero memory leaks, cero cuelgues de hilos zombis y cero bloqueos de procesos en el Administrador de Tareas.
+
+---
+
+## Extensiones Previstas en la Versión 3.0 (Propuesta)
+
+### Atajos adicionales
+
+| Tecla | Función | Fuente de datos |
+|---|---|---|
+| `5` | Osciloscopio apilado por bandas, con la mezcla debajo | Ondas por banda (documento 11, sección 8) |
+| `6` | Medidores de energía por banda con marcador de pico | Estado por banda |
+| `F11` | Pantalla completa sin bordes | Ya previsto en la 2.0, pendiente |
+| `Ctrl+B` | Abrir directamente la pestaña de bandas del HUD | HUD |
+
+### Estado adicional: Edición de Bandas
+
+- **Comportamiento**: Desde la pestaña "Bandas" del HUD el usuario elige el modo de partición (octavas, lineal, manual), añade o arrastra cortes en Hz sobre una regla logarítmica, nombra y colorea cada banda y ajusta su ataque y caída. Cada cambio incrementa la versión de configuración; el hilo de procesado reconstruye máscaras y bandas en la siguiente trama sin detener la captura.
+- **Feedback visual**: Las trazas del osciloscopio apilado se reordenan y recoloran en el siguiente cuadro. Si un corte deja una banda con menos de dos bins, la interfaz lo señala y muestra la latencia que haría falta para resolverla (documento 10, sección 5.3).
+- **Invariante**: Las bandas siempre particionan el rango; no es posible crear huecos ni solapes desde la interfaz.
+
+### Cambios en el estado de Interacción HUD
+
+- El panel adopta el material acrílico propio: desenfoque del fondo, tinte, exclusión y ruido (documento 12, sección 3). El fondo desenfocado se desplaza con el panel al arrastrarlo.
+- Apertura y cierre con curva de deceleración de 200 ms; cambio de modo con fundido cruzado de 150 ms (documento 12, sección 7).
+- Con la preferencia del sistema de transparencias desactivada, el panel es opaco y las transiciones instantáneas (documento 12, sección 13, fase 4).
+
+### Diagrama de estados ampliado
+
+```mermaid
+stateDiagram-v2
+    EstadoNormal --> EstadoMenuHUD : Tab / H
+    EstadoMenuHUD --> EstadoEdicionBandas : Pestana Bandas o Ctrl+B
+    EstadoEdicionBandas --> EstadoMenuHUD : Otra pestana
+    EstadoEdicionBandas --> EstadoNormal : Tab / H
+    EstadoNormal --> EstadoNormal : Teclas 1 a 6 (cambio de modo con fundido de 150 ms)
+```

@@ -1,5 +1,10 @@
 # Guía de Contribución y Estándares de Código - Audio Visualizer 2.0
 
+> **Estado:** Implementado. Normas vigentes para contribuir a `master`.  
+> **Alcance:** Estándares de código, concurrencia, dependencias, documentación y checklist de pull request.  
+> **Documentos relacionados:** [04_kanban_bdd.md](04_kanban_bdd.md), [06_build_and_toolchain.md](06_build_and_toolchain.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md)  
+> **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
+
 Esta guía define las directrices de ingeniería de software, arquitectura de código en C++17, estándares de concurrencia y el protocolo paso a paso para extender **Audio Visualizer 2.0** con nuevas funcionalidades o modos de visualización.
 
 ---
@@ -20,6 +25,17 @@ Esta guía define las directrices de ingeniería de software, arquitectura de c�
    - **Funciones y Métodos**: `PascalCase` (ej. `RenderThread`, `LoadConfig`, `EnumerateAudioDevices`).
    - **Variables y Miembros**: `snake_case` (ej. `peak_hold_time_ms`, `selected_device_id`).
    - **Constantes de Compilación**: `UPPER_SNAKE_CASE` o prefijo `k` (ej. `FFT_SIZE`, `BAR_MAX_HEIGHT`, `kBarsVertFallback`).
+
+---
+
+## 1.5 Estándares de Documentación
+
+1. **Cabecera de estado**: Todo documento de `docs/` empieza con un bloque que declara *Estado* (Implementado, Propuesta o Mixto), *Alcance* y *Documentos relacionados*.
+2. **Rigor cuantitativo**: Ninguna cifra (latencia, coste, volumen de datos, contraste) se afirma sin derivarla en el documento o remitir a la derivación. Las demostraciones matemáticas terminan con $\blacksquare$.
+3. **Sin emojis ni iconografía decorativa**. Los diagramas son Mermaid; las fórmulas, LaTeX entre `$$`.
+4. **Enlaces relativos**: Nunca rutas absolutas de una máquina concreta (`file:///D:/...`).
+5. **Separación entre lo implementado y lo propuesto**: Una función que no existe en `master` se describe siempre en tiempo condicional o bajo un encabezado que la marque como propuesta.
+6. **Sincronía con el código**: Un cambio de clave de configuración, atajo o comando de compilación no se fusiona sin actualizar los documentos 06 y 07 y el `README.md`.
 
 ---
 
@@ -129,3 +145,16 @@ Antes de fusionar cualquier cambio a `master`:
 - [ ] El conmutador de dispositivos WASAPI sigue funcionando sin crashear.
 - [ ] La sincronización de cuadros alcanza los 144+ FPS esperados del monitor sin quemar núcleos de CPU de forma innecesaria.
 - [ ] `README.md` y la documentación técnica en `docs/` reflejan cualquier nueva clave de configuración o atajo de teclado.
+
+---
+
+## 5. Guía Prevista: Cómo Añadir una Métrica a la Trama de Análisis (3.0)
+
+Cuando exista `AnalysisFrame` (documento 11, sección 3), añadir una métrica nueva, por ejemplo la planitud espectral, seguirá estos pasos:
+
+1. Declarar el campo en `AnalysisFrame` con su unidad en el comentario y, si es vectorial, su longitud ($N/2+1$ o $K$).
+2. Calcularlo en `AudioProcessingThread` tras la magnitud, sin bloqueos tomados, y documentar su coste en operaciones por trama en el documento 11, sección 10.
+3. Si algún renderizador lo consume, subirlo a `tex_band_state` o a una textura nueva de un canal, y registrar la textura en la tabla del documento 11, sección 6.
+4. Exponerlo en la pestaña "Telemetría" del HUD si tiene interés diagnóstico.
+5. Añadir un escenario Given-When-Then al documento 04 con una señal de prueba sintética cuyo valor teórico se conozca (por ejemplo, ruido blanco para la planitud, que debe dar 1,0).
+6. Documentar la fórmula y su derivación o referencia en el documento 10 o en un documento nuevo si el fundamento es extenso.

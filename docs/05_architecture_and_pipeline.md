@@ -1,5 +1,10 @@
 # Arquitectura del Sistema y Pipeline Matemático de Audio - Audio Visualizer 2.0
 
+> **Estado:** Implementado en la 2.0, con una nota sobre la ventana en la sección 2.3 que condiciona la 3.0.  
+> **Alcance:** Arquitectura de hilos, pipeline de señal y fundamento matemático de lo que hoy calcula el programa.  
+> **Documentos relacionados:** [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md) para la extensión a bandas y sus demostraciones, [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md) para su arquitectura.  
+> **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
+
 Este documento detalla la arquitectura de software multihilo, el flujo de datos de señal de audio en tiempo real y el fundamento matemático de cada etapa de procesamiento y renderizado en **Audio Visualizer 2.0**.
 
 ---
@@ -87,6 +92,8 @@ Para evitar el lóbulo secundario (*spectral leakage*) propio de ventanas rectan
 
 $$w[n] = 0.5 \cdot \left(1 - \cos\left(\frac{2\pi n}{N_{\text{FFT}} - 1}\right)\right), \quad n \in [0, N_{\text{FFT}} - 1]$$
 
+Nota. La forma anterior, con denominador $N_{\text{FFT}} - 1$, es la ventana simétrica y es la que implementa `audio-processing.cpp`. Para el análisis de magnitud es adecuada. Para la reconstrucción por solapamiento y suma que propone la 3.0 hace falta la forma periódica, con denominador $N_{\text{FFT}}$, porque solo ella cumple la condición de solapamiento constante (demostración en el documento 10, sección 4.2). La diferencia numérica en el espectro es del orden de $10^{-3}$ relativo y no se aprecia en pantalla.
+
 Normalización energética para que una onda senoidal pura a escala completa (amplitud 1.0) genere un pico de magnitud 1.0 exacto:
 
 $$K_{\text{norm}} = \frac{2}{\sum_{n=0}^{N_{\text{FFT}}-1} w[n]}$$
@@ -168,3 +175,23 @@ Cada barra dispone de un indicador de pico $p_i$ y un temporizador de sostenimie
 - Utiliza una textura 2D circular de $512 \times 256$ en memoria de GPU (`GL_R32F`).
 - Cada nuevo espectro se escribe en la fila $y_{\text{head}} = (y_{\text{head}} + 1) \bmod 256$ mediante `glTexSubImage2D`.
 - El fragment shader aplica desplazamiento toroidal fraccional $\text{fract}(u\_scroll\_head - (1.0 - v))$ y mapea la intensidad a una paleta térmica continua de 5 nodos de color (*Inferno/Magma*).
+
+---
+
+## 5. Extensión a la Descomposición en Bandas (Propuesta 3.0)
+
+El pipeline de esta versión termina en la sección 2.6 con un vector de valores en $[0,1]$. La versión 3.0 conserva las secciones 2.1 a 2.4 sin cambios y sustituye 2.5 y 2.6 por una trama de análisis completa. La justificación matemática de que la señal puede separarse en bandas y reconstruirse exactamente, cuánta información produce y qué límite impone el principio de incertidumbre está en [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md). La arquitectura (estructuras, hilos, texturas, configuración) está en [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md).
+
+Correspondencia entre este documento y la extensión:
+
+| Sección aquí | Se conserva en 3.0 | Cambia en 3.0 |
+|---|---|---|
+| 2.1 Captura y mezcla | Sí | No |
+| 2.2 Anillo y salto | Sí | No |
+| 2.3 Ventana de Hann | Forma | Denominador $N$ en lugar de $N-1$ |
+| 2.4 FFT r2c | Sí | Se conserva la fase además de la magnitud |
+| 2.5 Mapeo a barras | Pasa al renderizador de barras | El procesado publica bins y bandas, no píxeles |
+| 2.6 Escala dB | Sí | Se publica dB sin normalizar y la normalización es por renderizador |
+| 3.1 Filtro IIR | Sí | Constantes por banda en lugar de globales |
+| 3.2 Peak-hold | Sí | Sin cambios |
+| 4 Shaders | Sí | Se añaden osciloscopio apilado, medidores por banda y Lissajous |

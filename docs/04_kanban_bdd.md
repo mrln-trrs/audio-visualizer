@@ -1,11 +1,18 @@
 # Plan de Trabajo Ágil, Kanban y Criterios BDD - Audio Visualizer 2.0
 
+> **Estado:** Mixto. Las épicas 1 a 4 están completadas y verificadas en la 2.0. Las épicas 5 a 7 son la propuesta para la 3.0.  
+> **Alcance:** Definición de hecho y de preparado, épicas, historias y criterios de aceptación en formato Given-When-Then.  
+> **Documentos relacionados:** [01_prd_lean.md](01_prd_lean.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
+> **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
+
 ## 1. Definición de Hecho (Definition of Done - DoD)
 Una tarea o historia de usuario se considera terminada únicamente si:
 1. **Compilación Limpia**: Compila en Debug y Release en x64 sin advertencias ni errores (`/W3` o superior sin avisos).
 2. **Criterios BDD Verificados**: Los escenarios *Given-When-Then* asociados se ejecutan y superan satisfactoriamente.
 3. **Métricas de Rendimiento**: Mantiene la tasa de refresco nativa (144+ FPS o vsync) sin caídas de frames ni fugas de memoria.
 4. **Documentación Sincronizada**: Código debidamente comentado y `README.md` actualizado si cambian comandos de compilación o configuraciones.
+5. **Documentación Formal**: Los documentos de `docs/` afectados declaran su estado en la cabecera, no contienen emojis, y toda cifra cuantitativa nueva se deriva o se referencia.
+6. **Verificación Reproducible**: Cuando el criterio es numérico (error de reconstrucción, contraste, latencia), el procedimiento de medida queda descrito en la historia.
 
 ---
 
@@ -133,3 +140,134 @@ El sprint de desarrollo queda listo para comenzar cuando:
     - **Given** el visualizador capturando del dispositivo por defecto
     - **When** el usuario selecciona los auriculares USB en el ComboBox
     - **Then** el hilo de captura cierra el cliente anterior, conecta el nuevo endpoint, ajusta la frecuencia de muestreo y reanuda la visualización en menos de 500 ms sin bloquear la interfaz.
+
+---
+
+### Épica 5: Trama de Análisis y Bandas Configurables (Fase 5, propuesta 3.0)
+**Objetivo**: Sustituir el vector de alturas por una trama de análisis completa y permitir al usuario particionar el espectro en bandas nombradas con dinámica propia. Diseño en el documento 11, secciones 3 a 7.
+
+#### Historia 5.1: `AnalysisFrame` y triple búfer
+- **Como**: Desarrollador de renderizadores.
+- **Quiero**: Recibir por cuadro magnitud, fase, dB, RMS, pico y flujo espectral sin copias ni bloqueos.
+- **Para**: Escribir modos nuevos sin tocar el análisis.
+- **Criterios BDD**:
+  - **Scenario**: Equivalencia visual con la 2.0
+    - **Given** audio en reproducción y los cuatro modos de la 2.0 adaptados a la trama
+    - **When** se capturan los cuatro modos antes y después del cambio
+    - **Then** las capturas son visualmente equivalentes y el hilo de procesado no supera el 1 % de CPU.
+  - **Scenario**: Ausencia de tramas parciales
+    - **Given** el productor a 187 tramas por segundo y el consumidor a 144
+    - **When** se instrumenta el consumidor para verificar el campo `sequence`
+    - **Then** cada trama leída tiene `sequence` estrictamente creciente y nunca se observa una trama a medio escribir.
+
+#### Historia 5.2: Definición de bandas y energía
+- **Como**: Usuario.
+- **Quiero**: Dividir el espectro en octavas, en partes iguales o con cortes manuales, con nombre y color por banda.
+- **Para**: Ver la energía de cada rango por separado.
+- **Criterios BDD**:
+  - **Scenario**: Energía en la banda correcta
+    - **Given** el preset de siete bandas y una senoidal de 100 Hz a -6 dBFS
+    - **When** se leen `band_energy` y `band_peak_db`
+    - **Then** solo la banda "Bajo" tiene energía apreciable y su pico está a -6 dB con error inferior a 0,5 dB.
+  - **Scenario**: Parseval por bandas
+    - **Given** cualquier señal
+    - **When** se suman las energías de todas las bandas, incluida la banda implícita "resto"
+    - **Then** el resultado iguala la energía total de la trama con error relativo menor que $10^{-4}$.
+  - **Scenario**: Validación de cortes
+    - **Given** el HUD en la pestaña de bandas
+    - **When** el usuario intenta arrastrar un corte por encima del siguiente
+    - **Then** el corte se detiene en el límite y la partición sigue siendo válida.
+
+#### Historia 5.3: Dinámica por banda
+- **Como**: Usuario.
+- **Quiero**: Ataque y caída distintos para graves, medios y agudos.
+- **Para**: Que el bombo tenga inercia y los platos respondan al instante.
+- **Criterios BDD**:
+  - **Scenario**: Independencia entre bandas
+    - **Given** `release_ms` de la banda "Sub" en 400 y del resto en 100
+    - **When** cesa un tono de 50 Hz y otro de 5 kHz simultáneamente
+    - **Then** el medidor de "Sub" tarda unas cuatro veces más en caer al 37 % que el de "Brillo", con tolerancia del 10 %.
+
+---
+
+### Épica 6: Reconstrucción de Ondas y Osciloscopio Apilado (Fase 6, propuesta 3.0)
+**Objetivo**: Reconstruir la onda de cada banda por IFFT enmascarada y mostrarlas apiladas con la mezcla. Base: documento 10, sección 4; diseño: documento 11, secciones 5.3, 6 y 8.
+
+#### Historia 6.1: Reconstrucción exacta
+- **Como**: Usuario.
+- **Quiero**: Que la suma de las ondas de banda sea la señal original.
+- **Para**: Confiar en que lo que veo por bandas es una descomposición real y no un efecto.
+- **Criterios BDD**:
+  - **Scenario**: Teorema de la suma de bandas
+    - **Given** ventana de Hann periódica, $N = 2048$, $H = 256$ y máscaras con rampas complementarias
+    - **When** se suman numéricamente las $K$ ondas reconstruidas y se comparan con la mezcla en el mismo instante
+    - **Then** el error máximo absoluto es inferior a $10^{-5}$ en escala completa.
+  - **Scenario**: Ausencia de artefactos al cambiar bandas
+    - **Given** el osciloscopio apilado en marcha
+    - **When** se mueve un corte de banda
+    - **Then** las trazas cambian de forma en la siguiente trama sin picos espurios ni discontinuidades de más de 43 ms.
+
+#### Historia 6.2: Osciloscopio apilado
+- **Como**: Usuario.
+- **Quiero**: Ver $K$ trazas, una por banda, y la mezcla debajo, como en un osciloscopio multicanal.
+- **Para**: Observar cómo contribuye cada rango al sonido total.
+- **Criterios BDD**:
+  - **Scenario**: Alineación temporal
+    - **Given** un golpe de bombo
+    - **When** se observa la traza grave y la traza de mezcla
+    - **Then** el golpe aparece en ambas en el mismo cuadro.
+  - **Scenario**: Reducción sin aliasing
+    - **Given** una traza de 2048 muestras dibujada en 400 píxeles
+    - **When** suena un tono de 12 kHz
+    - **Then** la traza muestra una banda continua de altura estable (mínimo y máximo por columna), no una línea que parpadea.
+
+---
+
+### Épica 7: Diseño Fluent, Materiales y Movimiento (Fase 7, propuesta 3.0)
+**Objetivo**: Panel con material acrílico propio, materiales del sistema opcionales, transiciones con curvas de aceleración y accesibilidad. Diseño en el documento 12.
+
+#### Historia 7.1: Material acrílico propio
+- **Criterios BDD**:
+  - **Scenario**: Vidrio que sigue al panel
+    - **Given** el HUD abierto sobre el modo cascada
+    - **When** se arrastra el panel
+    - **Then** el fondo desenfocado se desplaza con él sin discontinuidad y los fps se mantienen en el refresco del monitor.
+  - **Scenario**: Contraste garantizado
+    - **Given** la escena más brillante alcanzable (cascada con ganancia máxima)
+    - **When** se mide la relación de contraste entre el texto del panel y su fondo con la fórmula de WCAG 2.1
+    - **Then** el valor es al menos 4,5:1.
+
+#### Historia 7.2: Materiales del sistema
+- **Criterios BDD**:
+  - **Scenario**: Acrílico en Windows 11
+    - **Given** Windows 11 22H2 y la opción activada en `config.json`
+    - **When** la ventana se coloca sobre otra aplicación
+    - **Then** se ve el contenido de la otra ventana desenfocado detrás de la visualización.
+  - **Scenario**: Degradación en Windows 10
+    - **Given** Windows 10 y la misma opción
+    - **When** arranca la aplicación
+    - **Then** la ventana es opaca, no hay error y el material propio del panel funciona igual.
+
+#### Historia 7.3: Movimiento y accesibilidad
+- **Criterios BDD**:
+  - **Scenario**: Duración de la transición
+    - **Given** el modo barras activo
+    - **When** se pulsa `2` y se graba la pantalla a 144 fps
+    - **Then** el fundido dura 150 ms con más o menos 10 ms y no hay ningún cuadro negro.
+  - **Scenario**: Respeto a la preferencia del sistema
+    - **Given** los efectos de transparencia desactivados en Configuración de Windows
+    - **When** arranca la aplicación
+    - **Then** el panel es opaco y las transiciones son instantáneas.
+
+---
+
+## 4. Orden de Ejecución Recomendado
+
+```mermaid
+flowchart LR
+    E5[Epica 5<br/>Trama y bandas] --> E6[Epica 6<br/>Reconstruccion y osciloscopio]
+    E5 --> E7[Epica 7<br/>Fluent]
+    E6 --> CQT[Opcional<br/>Resolucion variable]
+```
+
+La épica 5 es prerrequisito de las otras dos. La 6 y la 7 son independientes entre sí y pueden ejecutarse en paralelo. La resolución variable (documento 10, sección 7) se aborda solo si tras la épica 6 la resolución en graves resulta insuficiente.
