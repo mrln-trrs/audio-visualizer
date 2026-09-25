@@ -1,6 +1,6 @@
 # Especificación Técnica (Tech Spec) - Audio Visualizer 2.0
 
-> **Estado:** Mixto. Las secciones 1 a 6 describen la versión 2.0 implementada. Las secciones 7 y 8 resumen el diseño propuesto para la 3.0 y remiten a los documentos 11 y 12.  
+> **Estado:** Implementado. Las secciones 1 a 6 describen la base de la 2.0 y las secciones 6.5, 7 y 8 la 3.0; todo está implementado y verificado. Detalle de la implementación y sus mediciones en los documentos 11, 12 y 13.  
 > **Alcance:** Decisiones de ingeniería: stack, hilos, pipeline gráfico, GUI, WASAPI y sistema de construcción.  
 > **Documentos relacionados:** [01_prd_lean.md](01_prd_lean.md), [05_architecture_and_pipeline.md](05_architecture_and_pipeline.md), [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
@@ -191,7 +191,7 @@ Cada modo visual implementa `render::IVisualMode` (`Init`, `Render`, `Shutdown`,
 
 ---
 
-## 7. Capa de Análisis y Descomposición en Bandas (Propuesta 3.0)
+## 7. Capa de Análisis y Descomposición en Bandas (Implementada en la 3.0)
 
 Resumen ejecutivo del diseño detallado en [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), cuya base matemática se demuestra en [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md).
 

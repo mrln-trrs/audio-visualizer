@@ -1,6 +1,6 @@
 # Fundamentos Matemáticos de la Descomposición de una Señal de Audio en Bandas - Audio Visualizer 3.0
 
-> **Estado:** Propuesta (versión 3.0). Nada de lo descrito está implementado, salvo donde se indica expresamente que la 2.0 ya lo hace.  
+> **Estado:** Teoría con confirmación empírica. Las secciones 4, 5 y 7 tienen su comprobación numérica en el proyecto (4.5, 5.4 y 7.5) mediante `tests/band_synthesis_test.cpp`, `tests/band_metrics_test.cpp` y `tests/resolution_test.cpp`. La sección 8 (bancos de filtros) y la 9.4 en su totalidad describen alternativas y posibilidades no implementadas.  
 > **Alcance:** Fundamento matemático de la separación de una señal en bandas: demostraciones, límites físicos, volúmenes de información y consecuencias.  
 > **Documentos relacionados:** [05_architecture_and_pipeline.md](05_architecture_and_pipeline.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [01_prd_lean.md](01_prd_lean.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.

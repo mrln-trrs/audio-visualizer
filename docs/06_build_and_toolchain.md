@@ -1,6 +1,6 @@
 # Guía de Compilación, Toolchain y Despliegue - Audio Visualizer 2.0
 
-> **Estado:** Implementado. Describe las dos rutas de compilación de la 2.0, ambas verificadas con cero avisos. La última sección lista los requisitos adicionales que introduciría la 3.0.  
+> **Estado:** Implementado. Describe las dos rutas de compilación, ambas verificadas con cero avisos, las cuatro pruebas numéricas y los requisitos de la 3.0 (ya en uso).  
 > **Alcance:** Requisitos, compilación con CMake y con la solución de Visual Studio, post-build, empaquetado y resolución de errores.  
 > **Documentos relacionados:** [08_contributing_and_standards.md](08_contributing_and_standards.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
@@ -138,7 +138,7 @@ Para distribuir la aplicación a otro equipo con Windows:
 
 ---
 
-## 8. Requisitos Adicionales Previstos para la Versión 3.0
+## 8. Requisitos Adicionales de la Versión 3.0
 
 | Componente | Requisito | Motivo | Degradación si falta |
 |---|---|---|---|

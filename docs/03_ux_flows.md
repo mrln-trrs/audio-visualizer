@@ -1,6 +1,6 @@
 # Matriz de UX Flows y 7 Estados del Sistema - Audio Visualizer 2.0
 
-> **Estado:** Mixto. Los siete estados y los atajos 1 a 4, Tab y H están implementados en la 2.0. La sección final describe las extensiones propuestas para la 3.0.  
+> **Estado:** Implementado, salvo lo marcado: los atajos 1 a 6, Tab y H, el estado de edición de bandas (con controles numéricos acotados en lugar de una regla arrastrable), el material del panel y las transiciones están implementados. F11 y Ctrl+B siguen sin implementar.  
 > **Alcance:** Comportamiento de la interfaz, estados del sistema y ergonomía de teclado.  
 > **Documentos relacionados:** [07_user_manual_and_config.md](07_user_manual_and_config.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
@@ -104,7 +104,7 @@ stateDiagram-v2
 
 ---
 
-## Extensiones Previstas en la Versión 3.0 (Propuesta)
+## Extensiones de la Versión 3.0 (Implementadas, salvo F11 y Ctrl+B)
 
 ### Atajos adicionales
 

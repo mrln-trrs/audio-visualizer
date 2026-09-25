@@ -27,6 +27,7 @@ flowchart TD
     Index --> D10[10. Teoria de Descomposicion en Bandas<br/>docs/10_signal_decomposition_theory.md]
     Index --> D11[11. Arquitectura de la Trama de Analisis<br/>docs/11_analysis_frame_architecture.md]
     Index --> D12[12. Diseno Fluent y Post-procesado<br/>docs/12_fluent_design_ui.md]
+    Index --> D13[13. Bitacora de Desarrollo<br/>docs/13_development_log.md]
     D10 --> D11
     D11 --> D12
 ```
@@ -86,19 +87,25 @@ flowchart TD
 - **Objetivo**: Llevar la ventana y el panel al lenguaje visual de Windows 11 con fundamentos verificables.
 - **Contenido**: Principios de Fluent, Mica y Acrílico mediante `DwmSetWindowAttribute`, receta del acrílico propio, separabilidad del desenfoque gaussiano con demostración y coste, ruido, integración con Dear ImGui, curvas de movimiento, profundidad, DPI, contraste WCAG, compatibilidad Windows 10/11 y plan por fases.
 
+### 13. [13_development_log.md - Bitácora de Desarrollo](13_development_log.md)
+- **Estado**: Registro histórico y estado verificado a 2026-09-25.
+- **Objetivo**: Dejar constancia rigurosa de qué se hizo, en qué orden, qué falló y cómo se corrigió, qué se midió y qué queda sin verificar.
+- **Contenido**: Método, punto de partida, cronología por commit, tabla consolidada de errores clasificados por origen (heredados, propios, de prueba, de documentación, de herramienta), resultados medidos antes y después, estado actual en tres categorías (verificado, implementado sin verificar, no implementado), deuda técnica y cómo reproducir las verificaciones con los scripts de `tools/`.
+
 ## Estado de la documentación
 
 | Documento | Estado | Versión que describe |
 |---|---|---|
-| 01 PRD | Mixto: 2.0 implementada, hoja de ruta 3.0 propuesta | 2.0 y 3.0 |
-| 02 Especificación técnica | Mixto | 2.0 y 3.0 |
-| 03 UX Flows | Mixto | 2.0 y 3.0 |
+| 01 PRD | Implementado (2.0 y 3.0) | 2.0 y 3.0 |
+| 02 Especificación técnica | Implementado | 2.0 y 3.0 |
+| 03 UX Flows | Implementado salvo F11 y Ctrl+B | 2.0 y 3.0 |
 | 04 Kanban y BDD | Épicas 1 a 7 completadas | 2.0 y 3.0 |
 | 05 Arquitectura y pipeline | Implementado, con nota sobre la ventana periódica | 2.0 |
 | 06 Compilación | Implementado | 2.0 |
 | 07 Manual de usuario | Implementado, con sección de funciones previstas | 2.0 |
 | 08 Contribución | Implementado | 2.0 |
-| 09 Recomendaciones | Propuesta | 3.0 |
-| 10 Teoría de descomposición | Propuesta | 3.0 |
+| 09 Recomendaciones | Propuesta, parcialmente absorbida por la 3.0 | 3.0 |
+| 10 Teoría de descomposición | Teoría con confirmación empírica por las pruebas | 3.0 |
 | 11 Arquitectura de análisis | Implementado: fases A a D | 3.0 |
 | 12 Diseño Fluent | Mixto: fases 1 a 4 implementadas salvo detalles anotados | 3.0 |
+| 13 Bitácora de desarrollo | Registro histórico y estado verificado | 2.0 y 3.0 |

@@ -1,6 +1,6 @@
 # Manual de Usuario y Referencia de Configuración - Audio Visualizer 2.0
 
-> **Estado:** Implementado. Todo lo descrito en las secciones 1 a 5 está disponible en la 2.0. La sección 6 describe funciones previstas y no disponibles todavía.  
+> **Estado:** Implementado. Las secciones 1 a 5 describen la base y la sección 6 las funciones de la 3.0, todas disponibles salvo lo marcado como previsto.  
 > **Alcance:** Operación, atajos, panel de control, referencia de `config.json` y telemetría.  
 > **Documentos relacionados:** [03_ux_flows.md](03_ux_flows.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.

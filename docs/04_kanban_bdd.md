@@ -1,6 +1,6 @@
 # Plan de Trabajo Ágil, Kanban y Criterios BDD - Audio Visualizer 2.0
 
-> **Estado:** Mixto. Las épicas 1 a 4 están completadas y verificadas en la 2.0. Las épicas 5 a 7 son la propuesta para la 3.0.  
+> **Estado:** Completado. Las épicas 1 a 7 están completadas y verificadas; cada historia indica cómo se verificó. Los criterios que se corrigieron durante la implementación (festoneado, lóbulo principal, semitono a 40 Hz, fin de transición) están anotados en su historia y en el documento 13, sección 4.  
 > **Alcance:** Definición de hecho y de preparado, épicas, historias y criterios de aceptación en formato Given-When-Then.  
 > **Documentos relacionados:** [01_prd_lean.md](01_prd_lean.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.

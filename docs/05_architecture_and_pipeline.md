@@ -1,6 +1,6 @@
 # Arquitectura del Sistema y Pipeline Matemático de Audio - Audio Visualizer 2.0
 
-> **Estado:** Implementado en la 2.0, con una nota sobre la ventana en la sección 2.3 que condiciona la 3.0.  
+> **Estado:** Implementado. Describe la base del pipeline; la sección 5 indica qué cambió en la 3.0 (ya implementada: el análisis publica bins, el mapeo a barras es del render, la ventana es periódica).  
 > **Alcance:** Arquitectura de hilos, pipeline de señal y fundamento matemático de lo que hoy calcula el programa.  
 > **Documentos relacionados:** [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md) para la extensión a bandas y sus demostraciones, [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md) para su arquitectura.  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.

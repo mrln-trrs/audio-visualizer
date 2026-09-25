@@ -82,9 +82,10 @@ El repositorio cuenta con una suite documental estructurada en la carpeta [`docs
 | [07. Manual de Usuario y Configuración](docs/07_user_manual_and_config.md) | Guía del panel interactivo, atajos, telemetría y referencia de `config.json`. |
 | [08. Guía de Contribución y Estándares](docs/08_contributing_and_standards.md) | Estándares C++17, concurrencia, RAII y tutorial para añadir nuevos modos visuales. |
 | [09. Recomendaciones y Mejoras](docs/09_recommendations_and_future_improvements.md) | Cola SPSC Lock-Free, Bloom/Glow, Compute Shaders, iconografía y CI/CD con GitHub Actions. |
-| [10. Teoría de Descomposición en Bandas](docs/10_signal_decomposition_theory.md) | Demostraciones: inversión de la DFT, Parseval, reconstrucción perfecta por solapamiento, teorema de la suma de bandas, incertidumbre de Gabor, conservación de la información, volúmenes de datos, CQT. Propuesta 3.0. |
-| [11. Arquitectura de la Trama de Análisis](docs/11_analysis_frame_architecture.md) | `AnalysisFrame`, bandas configurables, triple búfer, texturas, dinámica por banda, osciloscopio apilado, configuración, presupuesto y fases. Propuesta 3.0. |
-| [12. Diseño Fluent y Post-procesado](docs/12_fluent_design_ui.md) | Mica y Acrílico del sistema, material acrílico propio, desenfoque separable demostrado, ruido, integración con ImGui, movimiento, DPI, contraste WCAG. Propuesta 3.0. |
+| [10. Teoría de Descomposición en Bandas](docs/10_signal_decomposition_theory.md) | Demostraciones: inversión de la DFT, Parseval, reconstrucción perfecta por solapamiento, teorema de la suma de bandas, incertidumbre de Gabor, conservación de la información, volúmenes de datos, CQT. Con confirmación empírica de las pruebas. |
+| [11. Arquitectura de la Trama de Análisis](docs/11_analysis_frame_architecture.md) | `AnalysisFrame`, bandas configurables, triple búfer, texturas, dinámica por banda, osciloscopio apilado, resolución variable, configuración, presupuesto y fases con resultados. Implementado. |
+| [12. Diseño Fluent y Post-procesado](docs/12_fluent_design_ui.md) | Mica y Acrílico del sistema, material acrílico propio, desenfoque separable demostrado, ruido, integración con ImGui, movimiento, DPI, contraste WCAG. Implementado. |
+| [13. Bitácora de Desarrollo](docs/13_development_log.md) | Cronología por commit, errores clasificados por origen, mediciones antes y después, estado verificado y no verificado, deuda técnica y reproducción de las verificaciones. |
 | [Índice Maestro de Docs](docs/README.md) | Mapa de navegación completo de la documentación técnica. |
 
 ---
@@ -115,6 +116,7 @@ audio-visualizer/
 |-- tests/band_synthesis_test.cpp   Prueba numerica de la reconstruccion y la suma de bandas
 |-- tests/motion_test.cpp           Prueba de las curvas y duraciones de las transiciones
 |-- tests/resolution_test.cpp       Prueba de la resolucion variable frente a la latencia
+|-- tools/                          Scripts: regenerar listas de fuentes, prueba de humo, CPU por hilo
 |-- shaders/                        Shaders GLSL (Modern OpenGL 3.3 Core)
 |   |-- bars.vert / bars.frag       Shader para barras y marcadores de pico
 |   |-- quad.vert                   Vertex shader común para modos de pantalla completa
@@ -242,14 +244,17 @@ Los valores se pueden modificar desde el panel de control Dear ImGui (`H` / `Tab
 
 ---
 
-## Hoja de Ruta: Versión 3.0 (Propuesta)
+## Versión 3.0: Qué Añade y Cómo Se Verificó
 
-La versión 2.0 reduce el análisis a un vector de alturas de barra. La 3.0 propuesta recupera toda la información que la transformada de Fourier extrae del audio y la expone a cualquier renderizador:
+La versión 2.0 reducía el análisis a un vector de alturas de barra. La 3.0 recupera toda la información que la transformada de Fourier extrae del audio y la expone a cualquier renderizador:
 
-- **Descomposición en bandas con reconstrucción exacta.** La pista se separa en las ondas de cada rango de frecuencias y la suma de esas ondas es idéntica a la señal original. Está demostrado en el documento 10 y diseñado en el 11.
+- **Descomposición en bandas con reconstrucción exacta.** La pista se separa en las ondas de cada rango de frecuencias y la suma de esas ondas es idéntica a la señal original. Demostrado en el documento 10, diseñado en el 11 y verificado numéricamente con error máximo de 2,6 por 10 elevado a menos 7 (`tests/band_synthesis_test.cpp`).
 - **Límite físico explícito.** No existe "ver cada frecuencia" en tiempo real: resolución en frecuencia y retraso están ligados por el principio de incertidumbre. La interfaz mostrará siempre la latencia asociada a la resolución elegida.
 - **Osciloscopio apilado**, medidores por banda, dinámica de ataque y caída por banda, y detección de golpes por flujo espectral.
-- **Diseño Fluent.** Panel con material acrílico propio (desenfoque, tinte, exclusión, ruido), materiales Mica y Acrílico del sistema en Windows 11, transiciones con curvas de aceleración y contraste mínimo 4,5:1. Documento 12.
+- **Diseño Fluent.** Panel con material acrílico propio (desenfoque, tinte, exclusión, ruido), materiales Mica y Acrílico del sistema en Windows 11, transiciones con curvas de deceleración y respeto a las preferencias de accesibilidad. Documento 12.
+- **Resolución variable opcional.** FFT larga en graves y corta en agudos, con la latencia que añade y ahorra visible en la interfaz. Documento 11, fase D.
+
+La bitácora completa de la implementación, con cada error cometido y corregido, las mediciones y lo que queda sin verificar, está en el [documento 13](docs/13_development_log.md).
 
 Estado: la versión 3.0 está completa. Fases A, B, C y D del documento 11 (trama de análisis con triple búfer; bandas configurables con métricas, dinámica por banda y medidores, tecla `6`; ondas por banda reconstruidas por IFFT enmascarada y osciloscopio apilado, tecla `5`; resolución variable opcional) y diseño Fluent del documento 12 (material acrílico propio, Mica y Acrílico del sistema en Windows 11, transiciones y respeto a las preferencias de accesibilidad). Cuatro pruebas numéricas ejecutables con `ctest`. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
 

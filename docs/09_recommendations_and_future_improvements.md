@@ -1,6 +1,6 @@
 # Guía de Recomendaciones, Mejoras Arquitectónicas y Cómo Implementarlas - Audio Visualizer 2.0
 
-> **Estado:** Propuesta. Ninguna de estas recomendaciones está implementada. Varias se desarrollan con rigor en los documentos 10 a 12.  
+> **Estado:** Propuesta, parcialmente absorbida. El triple búfer (2.1), el desenfoque como base de post-procesado (3.1) y los presets de bandas como sección de configuración (documento 11, sección 9) están implementados en la 3.0; el resto (Blackman-Harris, Bloom, compute shaders, iconos, CI/CD, multiplataforma) sigue siendo propuesta. Ver la tabla final.  
 > **Alcance:** Recomendaciones de ingeniería y hoja de ruta técnica priorizada.  
 > **Documentos relacionados:** [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.

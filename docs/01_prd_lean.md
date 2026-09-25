@@ -1,6 +1,6 @@
 # PRD Lean - Audio Visualizer 2.0
 
-> **Estado:** Mixto. Las secciones 1 a 4 describen la versión 2.0, implementada y verificada. La sección 5 es la hoja de ruta propuesta para la 3.0.  
+> **Estado:** Implementado. Las secciones 1 a 4 describen la versión 2.0 y la sección 5 la 3.0; ambas están implementadas y verificadas. El registro de lo hecho, sus fallos y sus mediciones está en el documento 13.  
 > **Alcance:** Visión de producto, alcance, requerimientos funcionales y no funcionales.  
 > **Documentos relacionados:** [02_tech_spec.md](02_tech_spec.md), [04_kanban_bdd.md](04_kanban_bdd.md), [10_signal_decomposition_theory.md](10_signal_decomposition_theory.md), [11_analysis_frame_architecture.md](11_analysis_frame_architecture.md), [12_fluent_design_ui.md](12_fluent_design_ui.md)  
 > **Convención:** este documento distingue entre lo *implementado* (verificable en el código de `master`) y lo *propuesto* (diseño para la versión 3.0). Toda cifra cuantitativa se deriva o se referencia; no hay estimaciones sin base.
@@ -67,7 +67,7 @@ Para respetar el principio KISS & YAGNI y evitar dispersión de esfuerzo:
 
 ## 5. Hoja de Ruta Propuesta: Versión 3.0
 
-Estado: propuesta. Ninguno de estos requerimientos está implementado. Su viabilidad se demuestra en el documento 10; su diseño, en los documentos 11 y 12.
+Estado: implementado. Los requerimientos RF-08 a RF-15 están cumplidos y verificados (documento 11, fases A a D; documento 12, fases 1 a 4; documento 13, sección 6). Su viabilidad se demostró en el documento 10 antes de implementarlos.
 
 ### 5.1 Motivación
 

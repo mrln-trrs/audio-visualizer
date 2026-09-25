@@ -93,7 +93,7 @@ if (ImGui::RadioButton("5. Particulas", cfg.visual_mode == core::MODE_PARTICLES)
 ```
 
 ### Paso 6: Añadir los archivos al build
-Los tres sistemas leen la lista de fuentes de forma explícita. Añadir `particles_mode.cpp` y `.h` a `CMakeLists.txt` (`PROJECT_SOURCES`), a `audio-visualizer.vcxproj` (`ClCompile` y `ClInclude`) y a `audio-visualizer.vcxproj.filters` (filtro `Fuentes\render\modes`).
+Los tres sistemas leen la lista de fuentes de forma explícita. En lugar de editarlos a mano, ejecutar `python tools\update_build_lists.py`, que regenera `PROJECT_SOURCES` en `CMakeLists.txt`, los grupos `ClCompile`, `ClInclude` y `None` de `audio-visualizer.vcxproj` y los filtros por carpeta de `audio-visualizer.vcxproj.filters` a partir del árbol `src/`, `shaders/` e `imgui-1.91.5/`.
 
 ### Paso 7: Compilar, verificar y documentar
 ```powershell
