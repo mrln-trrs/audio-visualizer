@@ -132,15 +132,19 @@ void RenderThread(VisualizerData& sharedVisualizerData, SharedConfigData& shared
             double y_height = bar_height_normalized * 1.5 - 1.0;
 
             // Set the color of the bar using the base color from config and a gradient.
-            glColor3f(base_color[0] + bar_height_normalized * 0.5f,
-                base_color[1] - bar_height_normalized * 0.5f,
-                base_color[2] + bar_height_normalized * 0.5f);
+            const GLfloat h = static_cast<GLfloat>(bar_height_normalized);
+            glColor3f(base_color[0] + h * 0.5f,
+                base_color[1] - h * 0.5f,
+                base_color[2] + h * 0.5f);
 
             // Draw a quad (rectangle) for the bar.
-            glVertex2f(x_position, -1.0f);
-            glVertex2f(x_position + adjusted_bar_width, -1.0f);
-            glVertex2f(x_position + adjusted_bar_width, y_height);
-            glVertex2f(x_position, y_height);
+            const GLfloat x0 = static_cast<GLfloat>(x_position);
+            const GLfloat x1 = static_cast<GLfloat>(x_position + adjusted_bar_width);
+            const GLfloat y1 = static_cast<GLfloat>(y_height);
+            glVertex2f(x0, -1.0f);
+            glVertex2f(x1, -1.0f);
+            glVertex2f(x1, y1);
+            glVertex2f(x0, y1);
         }
 
         // End drawing.

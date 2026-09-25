@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -26,19 +18,6 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v145</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v145</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -57,12 +36,6 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -70,52 +43,6 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\include;$(ProjectDir)glew-2.1.0\include;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include</AdditionalIncludeDirectories>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\lib-vc2022;$(ProjectDir)glew-2.1.0\lib\Release\x64;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include\nlohmann;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libfftw3f-3.lib;libfftw3-3.lib;glew32.lib;glfw3.lib;winmm.lib;comctl32.lib;ole32.lib;uuid.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
-    </Link>
-    <PostBuildEvent>
-      <Command>xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3-3.dll" "$(OutDir)"
-xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3f-3.dll" "$(OutDir)"
-xcopy /Y /D "$(ProjectDir)glew-2.1.0\bin\Release\x64\glew32.dll" "$(OutDir)"</Command>
-      <Message>Copiando DLL de FFTW y GLEW a la carpeta de salida</Message>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\include;$(ProjectDir)glew-2.1.0\include;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include</AdditionalIncludeDirectories>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\lib-vc2022;$(ProjectDir)glew-2.1.0\lib\Release\x64;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include\nlohmann;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libfftw3f-3.lib;libfftw3-3.lib;glew32.lib;glfw3.lib;winmm.lib;comctl32.lib;ole32.lib;uuid.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
-    </Link>
-    <PostBuildEvent>
-      <Command>xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3-3.dll" "$(OutDir)"
-xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3f-3.dll" "$(OutDir)"
-xcopy /Y /D "$(ProjectDir)glew-2.1.0\bin\Release\x64\glew32.dll" "$(OutDir)"</Command>
-      <Message>Copiando DLL de FFTW y GLEW a la carpeta de salida</Message>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -129,15 +56,17 @@ xcopy /Y /D "$(ProjectDir)glew-2.1.0\bin\Release\x64\glew32.dll" "$(OutDir)"</Co
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\lib-vc2022;$(ProjectDir)glew-2.1.0\lib\Release\x64;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include\nlohmann;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libfftw3f-3.lib;libfftw3-3.lib;glew32.lib;glfw3.lib;winmm.lib;comctl32.lib;ole32.lib;uuid.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\lib-vc2022;$(ProjectDir)glew-2.1.0\lib\Release\x64;$(ProjectDir)fftw-3.3.5-dll64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libfftw3f-3.lib;libfftw3-3.lib;glew32.lib;glfw3dll.lib;winmm.lib;comctl32.lib;ole32.lib;uuid.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3-3.dll" "$(OutDir)"
 xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3f-3.dll" "$(OutDir)"
-xcopy /Y /D "$(ProjectDir)glew-2.1.0\bin\Release\x64\glew32.dll" "$(OutDir)"</Command>
-      <Message>Copiando DLL de FFTW y GLEW a la carpeta de salida</Message>
+xcopy /Y /D "$(ProjectDir)glew-2.1.0\bin\Release\x64\glew32.dll" "$(OutDir)"
+xcopy /Y /D "$(ProjectDir)glfw-3.4.bin.WIN64\lib-vc2022\glfw3.dll" "$(OutDir)"
+xcopy /Y /D "$(ProjectDir)config.json" "$(OutDir)"</Command>
+      <Message>Copiando DLL (FFTW, GLEW, GLFW) y config.json a la carpeta de salida</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -148,20 +77,24 @@ xcopy /Y /D "$(ProjectDir)glew-2.1.0\bin\Release\x64\glew32.dll" "$(OutDir)"</Co
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AdditionalIncludeDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\include;$(ProjectDir)glew-2.1.0\include;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\lib-vc2022;$(ProjectDir)glew-2.1.0\lib\Release\x64;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include\nlohmann;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libfftw3f-3.lib;libfftw3-3.lib;glew32.lib;glfw3.lib;winmm.lib;comctl32.lib;ole32.lib;uuid.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\lib-vc2022;$(ProjectDir)glew-2.1.0\lib\Release\x64;$(ProjectDir)fftw-3.3.5-dll64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libfftw3f-3.lib;libfftw3-3.lib;glew32.lib;glfw3dll.lib;winmm.lib;comctl32.lib;ole32.lib;uuid.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3-3.dll" "$(OutDir)"
 xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3f-3.dll" "$(OutDir)"
-xcopy /Y /D "$(ProjectDir)glew-2.1.0\bin\Release\x64\glew32.dll" "$(OutDir)"</Command>
-      <Message>Copiando DLL de FFTW y GLEW a la carpeta de salida</Message>
+xcopy /Y /D "$(ProjectDir)glew-2.1.0\bin\Release\x64\glew32.dll" "$(OutDir)"
+xcopy /Y /D "$(ProjectDir)glfw-3.4.bin.WIN64\lib-vc2022\glfw3.dll" "$(OutDir)"
+xcopy /Y /D "$(ProjectDir)config.json" "$(OutDir)"</Command>
+      <Message>Copiando DLL (FFTW, GLEW, GLFW) y config.json a la carpeta de salida</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
