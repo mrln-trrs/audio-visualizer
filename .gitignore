@@ -8,3 +8,7 @@ x64/
 # Se versionan dentro del repo a propósito para no tener que descargarlas de nuevo.
 # Solo se excluyen los intermedios generados al crear las .lib de FFTW.
 fftw-3.3.5-dll64/*.exp
+
+# Generado por Visual Studio al abrir la carpeta (modo "Abrir carpeta"), no por la solución
+CppProperties.json
+CMakeSettings.json
