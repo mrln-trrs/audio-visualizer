@@ -97,6 +97,8 @@ void AudioProcessingThread(AudioData& sharedData, VisualizerData& sharedVisualiz
     int bands_sample_rate = 0;
 
     uint64_t consumed = 0; // total_samples en la última ventana procesada
+    uint64_t seen_config_version = 0;
+    std::vector<float> waveform_snapshot(1024, 0.0f);
 
     while (true) {
         {
@@ -106,15 +108,32 @@ void AudioProcessingThread(AudioData& sharedData, VisualizerData& sharedVisualiz
             });
             if (sharedVisualizerData.should_terminate.load()) break;
 
-            // Copiar siempre las FFT_SIZE muestras más recientes: mínima latencia. Si llegan
-            // varios saltos de golpe se salta directamente al final, sin acumular retraso.
+            // Copiar siempre las FFT_SIZE muestras más recientes: mínima latencia.
             const uint64_t end = sharedData.total_samples;
             const int64_t start = static_cast<int64_t>(end) - FFT_SIZE;
             for (int n = 0; n < FFT_SIZE; ++n) {
                 const int64_t idx = start + n;
                 frame[n] = (idx < 0) ? 0.0f : sharedData.ring[static_cast<uint64_t>(idx) & RING_MASK] * window[n];
             }
+
+            // Extraer las últimas muestras crudas para el osciloscopio en el dominio del tiempo
+            const int wave_len = static_cast<int>(waveform_snapshot.size());
+            const int64_t wave_start = static_cast<int64_t>(end) - wave_len;
+            for (int n = 0; n < wave_len; ++n) {
+                const int64_t idx = wave_start + n;
+                waveform_snapshot[n] = (idx < 0) ? 0.0f : sharedData.ring[static_cast<uint64_t>(idx) & RING_MASK];
+            }
+
             consumed = end;
+        }
+
+        // Si la configuración cambió en la UI, recargarla y forzar reconstrucción de bandas
+        const uint64_t cur_cfg_ver = sharedConfigData.version.load(std::memory_order_relaxed);
+        if (cur_cfg_ver != seen_config_version) {
+            std::lock_guard<std::mutex> lock(sharedConfigData.mtx);
+            cfg = sharedConfigData.config;
+            seen_config_version = cur_cfg_ver;
+            bands_num_bars = -1;
         }
 
         const int sample_rate = sharedData.sample_rate.load();
@@ -146,6 +165,7 @@ void AudioProcessingThread(AudioData& sharedData, VisualizerData& sharedVisualiz
         {
             std::lock_guard<std::mutex> lock(sharedVisualizerData.mtx);
             sharedVisualizerData.spectrum.swap(spectrum);
+            sharedVisualizerData.waveform = waveform_snapshot;
         }
         sharedVisualizerData.generation.fetch_add(1, std::memory_order_release);
     }

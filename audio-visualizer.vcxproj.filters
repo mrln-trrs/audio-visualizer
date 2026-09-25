@@ -55,4 +55,69 @@
     <None Include="config.json" />
     <None Include=".gitignore" />
   </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Terceros">
+      <UniqueIdentifier>{6f1c3a2e-6d2b-4f0e-9c1a-2b7e8d9f0a11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Terceros\imgui">
+      <UniqueIdentifier>{7a2d4b3f-7e3c-4a1f-8d2b-3c8f9e0a1b22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{8b3e5c4a-8f4d-4b2a-9e3c-4d9a0f1b2c33}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="imgui-1.91.5\imgui.cpp">
+      <Filter>Terceros\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-1.91.5\imgui_draw.cpp">
+      <Filter>Terceros\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-1.91.5\imgui_tables.cpp">
+      <Filter>Terceros\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-1.91.5\imgui_widgets.cpp">
+      <Filter>Terceros\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-1.91.5\backends\imgui_impl_glfw.cpp">
+      <Filter>Terceros\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-1.91.5\backends\imgui_impl_opengl3.cpp">
+      <Filter>Terceros\imgui</Filter>
+    </ClCompile>
+    <ClInclude Include="imgui-1.91.5\imconfig.h">
+      <Filter>Terceros\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-1.91.5\imgui.h">
+      <Filter>Terceros\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-1.91.5\imgui_internal.h">
+      <Filter>Terceros\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-1.91.5\backends\imgui_impl_glfw.h">
+      <Filter>Terceros\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-1.91.5\backends\imgui_impl_opengl3.h">
+      <Filter>Terceros\imgui</Filter>
+    </ClInclude>
+    <None Include="shaders\bars.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\bars.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\quad.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\radial.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\waveform.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\waterfall.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="CMakeLists.txt" />
+  </ItemGroup>
 </Project>

@@ -3,6 +3,8 @@
 #include <vector>
 #include <mutex>
 #include <string>
+#include <atomic>
+#include <cstdint>
 
 // Configuración del visualizador. Los valores por defecto se usan cuando
 // la clave no aparece en config.json.
@@ -29,13 +31,23 @@ struct VisualizerConfig {
     // Límite de cuadros por segundo si el driver ignora la sincronía vertical.
     // 0 = usar la tasa de refresco del monitor donde está la ventana.
     int max_fps = 0;
+    // Modo de visualización: 0 = Barras, 1 = Radial, 2 = Osciloscopio, 3 = Cascada
+    int visual_mode = 0;
+    // Efecto Peak-Hold en modo barras
+    bool peak_hold_enabled = true;
+    float peak_hold_time_ms = 350.0f;
+    float peak_decay_speed = 1.8f;
+    std::vector<float> peak_color_rgb{ 1.0f, 0.85f, 0.2f };
+    // Dispositivo de audio seleccionado (vacío = dispositivo predeterminado)
+    std::string selected_device_name = "";
 };
 
-// La configuración se carga una vez al arrancar y después solo se lee,
-// pero se protege con mutex por si en el futuro se recarga en caliente.
+// La configuración se puede leer y guardar en tiempo real desde la UI.
 struct SharedConfigData {
     VisualizerConfig config;
     std::mutex mtx;
+    std::atomic<uint64_t> version{ 0 }; // Se incrementa cuando la config cambia
 };
 
 void LoadConfig(SharedConfigData& sharedConfigData, const std::string& filename);
+bool SaveConfig(const SharedConfigData& sharedConfigData, const std::string& filename);

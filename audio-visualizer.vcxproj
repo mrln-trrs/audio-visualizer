@@ -49,7 +49,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\include;$(ProjectDir)glew-2.1.0\include;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\include;$(ProjectDir)glew-2.1.0\include;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include;$(ProjectDir)imgui-1.91.5;$(ProjectDir)imgui-1.91.5\backends</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
@@ -61,12 +61,12 @@
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3-3.dll" "$(OutDir)"
-xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3f-3.dll" "$(OutDir)"
+      <Command>xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3f-3.dll" "$(OutDir)"
 xcopy /Y /D "$(ProjectDir)glew-2.1.0\bin\Release\x64\glew32.dll" "$(OutDir)"
 xcopy /Y /D "$(ProjectDir)glfw-3.4.bin.WIN64\lib-vc2022\glfw3.dll" "$(OutDir)"
-xcopy /Y /D "$(ProjectDir)config.json" "$(OutDir)"</Command>
-      <Message>Copiando DLL (FFTW, GLEW, GLFW) y config.json a la carpeta de salida</Message>
+xcopy /Y /D "$(ProjectDir)config.json" "$(OutDir)"
+xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
+      <Message>Copiando DLL (FFTW, GLEW, GLFW), shaders y config.json a la carpeta de salida</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -79,7 +79,7 @@ xcopy /Y /D "$(ProjectDir)config.json" "$(OutDir)"</Command>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\include;$(ProjectDir)glew-2.1.0\include;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)glfw-3.4.bin.WIN64\include;$(ProjectDir)glew-2.1.0\include;$(ProjectDir)fftw-3.3.5-dll64;$(ProjectDir)json-develop\include;$(ProjectDir)imgui-1.91.5;$(ProjectDir)imgui-1.91.5\backends</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -89,12 +89,12 @@ xcopy /Y /D "$(ProjectDir)config.json" "$(OutDir)"</Command>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3-3.dll" "$(OutDir)"
-xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3f-3.dll" "$(OutDir)"
+      <Command>xcopy /Y /D "$(ProjectDir)fftw-3.3.5-dll64\libfftw3f-3.dll" "$(OutDir)"
 xcopy /Y /D "$(ProjectDir)glew-2.1.0\bin\Release\x64\glew32.dll" "$(OutDir)"
 xcopy /Y /D "$(ProjectDir)glfw-3.4.bin.WIN64\lib-vc2022\glfw3.dll" "$(OutDir)"
-xcopy /Y /D "$(ProjectDir)config.json" "$(OutDir)"</Command>
-      <Message>Copiando DLL (FFTW, GLEW, GLFW) y config.json a la carpeta de salida</Message>
+xcopy /Y /D "$(ProjectDir)config.json" "$(OutDir)"
+xcopy /Y /D /I /E "$(ProjectDir)shaders" "$(OutDir)shaders\"</Command>
+      <Message>Copiando DLL (FFTW, GLEW, GLFW), shaders y config.json a la carpeta de salida</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -103,6 +103,12 @@ xcopy /Y /D "$(ProjectDir)config.json" "$(OutDir)"</Command>
     <ClCompile Include="config.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="renderer.cpp" />
+    <ClCompile Include="imgui-1.91.5\imgui.cpp" />
+    <ClCompile Include="imgui-1.91.5\imgui_draw.cpp" />
+    <ClCompile Include="imgui-1.91.5\imgui_tables.cpp" />
+    <ClCompile Include="imgui-1.91.5\imgui_widgets.cpp" />
+    <ClCompile Include="imgui-1.91.5\backends\imgui_impl_glfw.cpp" />
+    <ClCompile Include="imgui-1.91.5\backends\imgui_impl_opengl3.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="audio-capture.h" />
@@ -110,11 +116,23 @@ xcopy /Y /D "$(ProjectDir)config.json" "$(OutDir)"</Command>
     <ClInclude Include="common.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="renderer.h" />
+    <ClInclude Include="imgui-1.91.5\imconfig.h" />
+    <ClInclude Include="imgui-1.91.5\imgui.h" />
+    <ClInclude Include="imgui-1.91.5\imgui_internal.h" />
+    <ClInclude Include="imgui-1.91.5\backends\imgui_impl_glfw.h" />
+    <ClInclude Include="imgui-1.91.5\backends\imgui_impl_opengl3.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="config.json" />
     <None Include="README.md" />
+    <None Include="CMakeLists.txt" />
+    <None Include="shaders\bars.vert" />
+    <None Include="shaders\bars.frag" />
+    <None Include="shaders\quad.vert" />
+    <None Include="shaders\radial.frag" />
+    <None Include="shaders\waveform.frag" />
+    <None Include="shaders\waterfall.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

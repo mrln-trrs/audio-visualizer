@@ -1,7 +1,10 @@
 #pragma once
 
 #include "common.h"
+#include <vector>
 
-// Prototypes of the functions in audio-capture.cpp
-// This is the declaration that the compiler needs to find when compiling main.cpp.
+// Enumerar dispositivos de salida de audio activos en Windows
+std::vector<AudioDeviceInfo> EnumerateAudioDevices();
+
+// Hilo de captura WASAPI loopback
 void AudioCaptureThread(AudioData& sharedData, VisualizerData& visualizerData);

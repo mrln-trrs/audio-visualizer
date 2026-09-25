@@ -1,15 +1,29 @@
 {
   "estilos": {
-    "attack_ms": 12,
-    "release_ms": 160,
     "amplitude_factor": 1.0,
-    "dynamic_range_db": 60,
-    "base_color_rgb": [ 0.65, 0.15, 0.15 ],
+    "attack_ms": 12.0,
+    "base_color_rgb": [
+      0.65,
+      0.15,
+      0.15
+    ],
     "bin_grouping_factor": 10.0,
+    "dynamic_range_db": 60.0,
     "frequency_scale": "linear",
-    "min_frequency": 30,
-    "max_frequency": 16000,
-    "vsync": true,
-    "max_fps": 0
+    "max_fps": 0,
+    "max_frequency": 16000.0,
+    "min_frequency": 30.0,
+    "peak_color_rgb": [
+      1.0,
+      0.85,
+      0.2
+    ],
+    "peak_decay_speed": 1.8,
+    "peak_hold_enabled": true,
+    "peak_hold_time_ms": 350.0,
+    "release_ms": 160.0,
+    "selected_device_name": "",
+    "visual_mode": 0,
+    "vsync": true
   }
 }

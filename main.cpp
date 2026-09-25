@@ -19,6 +19,13 @@ int main() {
     // arranca con esa carpeta como directorio de trabajo.
     LoadConfig(sharedConfigData, "config.json");
 
+    // Dispositivo guardado en config.json. El hilo de captura lo resuelve a un id WASAPI
+    // tras enumerar; si ya no existe, usa el predeterminado.
+    {
+        std::lock_guard<std::mutex> lock(sharedVisualizerData.dev_mtx);
+        sharedVisualizerData.requested_device_name = sharedConfigData.config.selected_device_name;
+    }
+
     std::thread audioCaptureThread(AudioCaptureThread, std::ref(sharedAudioData), std::ref(sharedVisualizerData));
     std::thread signalProcessingThread(AudioProcessingThread, std::ref(sharedAudioData), std::ref(sharedVisualizerData), std::ref(sharedConfigData));
 

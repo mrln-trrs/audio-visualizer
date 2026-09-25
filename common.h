@@ -5,7 +5,23 @@
 #include <condition_variable>
 #include <atomic>
 #include <cstdint>
+#include <string>
 #include "config.h"
+
+// Modos de visualización soportados
+enum VisualizerMode {
+    MODE_BARS = 0,
+    MODE_RADIAL = 1,
+    MODE_WAVEFORM = 2,
+    MODE_WATERFALL = 3
+};
+
+// Información de un dispositivo de salida de audio de Windows
+struct AudioDeviceInfo {
+    std::wstring id;
+    std::string name;
+    bool is_default = false;
+};
 
 // Tamaño de la ventana de análisis, en muestras mono. A 48 kHz equivale a ~42,7 ms.
 // Cuanto mayor, más resolución en graves; cuanto menor, menos latencia.
@@ -38,10 +54,22 @@ struct VisualizerData {
     std::mutex mtx;
     // Último espectro publicado: un valor en [0, 1] por barra.
     std::vector<float> spectrum;
+    // Última forma de onda publicada en el dominio del tiempo [-1.0, 1.0].
+    std::vector<float> waveform;
     // Se incrementa en cada publicación. El renderizador solo copia si ha cambiado.
     std::atomic<uint64_t> generation{ 0 };
     // Número de barras que quiere el renderizador (ancho del framebuffer en píxeles).
     std::atomic<int> atomic_num_bars{ 1024 };
     // Bandera global de cierre.
     std::atomic<bool> should_terminate{ false };
+
+    // Gestión y selección de dispositivos de audio WASAPI
+    std::mutex dev_mtx;
+    std::vector<AudioDeviceInfo> devices;
+    // Dispositivo pedido por id (desde la UI) o por nombre (desde config.json al arrancar).
+    // El hilo de captura resuelve el nombre a id tras enumerar los dispositivos.
+    std::wstring requested_device_id;
+    std::string requested_device_name;
+    std::string current_device_name;
+    std::atomic<bool> device_change_pending{ false };
 };
