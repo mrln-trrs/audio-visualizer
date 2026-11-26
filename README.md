@@ -1,75 +1,106 @@
-# Audio Visualizer 2.0
+# Audio Visualizer 3.0
 
-Visualizador de audio de alto rendimiento en tiempo real para Windows (C++17). Captura el sonido del sistema mediante loopback WASAPI, calcula su espectro con FFTW en precisión simple y lo renderiza con **Modern OpenGL 3.3 Core Profile** mediante shaders GLSL acelerados por GPU, sincronizado a la tasa de refresco del monitor (60, 144, 240+ Hz).
+Visualizador de audio en tiempo real para Windows: captura el sonido del sistema por loopback WASAPI, lo analiza con FFTW y lo dibuja con OpenGL 3.3 Core y shaders GLSL, con un panel de control en Dear ImGui.
 
-Incluye un panel de control flotante interactivo en vivo con **Dear ImGui**, efecto físico de **Peak-Hold**, 4 modos de visualización procedurales, selector de dispositivos de salida WASAPI con cambio en caliente y compilación estándar con **CMake**.
+![Estado](https://img.shields.io/badge/estado-mantenimiento-blue)
+![Licencia](https://img.shields.io/badge/licencia-GPL--3.0-green)
+![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C)
+![Plataforma](https://img.shields.io/badge/plataforma-Windows%2010%2F11%20x64-lightgrey)
 
-- **Lenguaje**: C++17
-- **Plataforma**: Windows 10/11, x64
-- **Gráficos**: OpenGL 3.3 Core Profile + Shaders GLSL + GLEW 2.1.0 + GLFW 3.4
-- **Interfaz**: Dear ImGui (v1.91.5)
-- **Audio**: Windows WASAPI Loopback (COM)
-- **FFT**: FFTW 3.3.5 float (`fftwf_*`)
-- **Build System**: CMake 3.20+ (Visual Studio, Ninja, Clang) y solución `.sln`
+## Estado del proyecto
 
----
+**Mantenimiento.** La versión 3.0 está completa (fases A a D del documento 11 y diseño Fluent del documento 12). Cuatro pruebas numéricas se ejecutan con `ctest`. No se publican binarios: se compila desde el código.
 
-## Índice
+Importante: un clon limpio necesita los binarios **x64 de GLEW 2.1.0**, que nunca llegaron a versionarse (ver [Obtener GLEW x64](#obtener-glew-x64)).
 
-1. [Novedades en la Versión 2.0](#novedades-en-la-versión-20)
-2. [Compilar y Ejecutar](#compilar-y-ejecutar)
-3. [Documentación Completa (docs/)](#documentación-completa-docs)
-4. [Controles y Atajos de Teclado](#controles-y-atajos-de-teclado)
-5. [Estructura del Repositorio](#estructura-del-repositorio)
-6. [Arquitectura y Sincronización](#arquitectura-y-sincronización)
-7. [Modos de Visualización](#modos-de-visualización)
-8. [Configuración (config.json)](#configuración-configjson)
-9. [Dependencias de Terceros](#dependencias-de-terceros)
+## Características
 
----
+- Captura loopback WASAPI de la salida activa o elegida, con cambio de dispositivo en caliente y detección de formato con mezcla a mono.
+- Análisis FFTW en precisión simple: ventana de Hann, 2048 muestras con salto de 256, dB normalizados; resolución variable opcional (FFT larga en graves, corta en agudos).
+- Bandas configurables con métricas (energía, RMS, pico), dinámica de ataque y caída por banda y reconstrucción de la onda de cada banda por IFFT enmascarada (la suma de las bandas reproduce la señal).
+- **Seis modos visuales** (enum `VisualizerMode` en `src/core/types.h`, un módulo por modo en `src/render/modes/`):
 
-## Novedades en la Versión 2.0
+| Tecla | Modo | Descripción |
+|---|---|---|
+| `1` | Barras con peak-hold | Una barra por banda; el marcador de pico se mantiene `peak_hold_time_ms` y cae con `peak_decay_speed`. |
+| `2` | Radial | Espectro en coordenadas polares; los graves pulsan el núcleo. |
+| `3` | Osciloscopio | Forma de onda con haz antialiasing tipo CRT. |
+| `4` | Cascada (waterfall) | Historial del espectro en una textura 2D con paleta térmica. |
+| `5` | Osciloscopio apilado | Una traza por banda reconstruida y la mezcla debajo. |
+| `6` | Medidores por banda | Nombre, rango, nivel en dB, pico y color por banda. |
 
-- **Modern OpenGL 3.3 Core Profile**: Adiós a `glBegin`/`glEnd` (OpenGL 1.1). Ahora todo corre en la GPU con VBO/VAO y shaders GLSL.
-- **Panel de Control Dear ImGui en Vivo**: Pulsa `H` o `Tab` para abrir un HUD translúcido y ajustar en tiempo real ataque, caída, ganancia, colores, escalas y presets ("Cyberpunk Neon", "Matrix Emerald", "Solar Amber") sin editar archivos de texto.
-- **Marcadores de Pico (Peak-Hold)**: Barras con agujas de pico que flotan en el valor máximo y descienden suavemente con física de gravedad.
-- **4 Modos Visuales Conmutables**:
-  1. **Barras con Peak-Hold** (Ecualizador clásico de alta fidelidad).
-  2. **Radial / Circular** (Anillo reactivo procedural con núcleo pulsante para graves).
-  3. **Osciloscopio / Waveform** (Haz analógico tipo tubo CRT de fósforo verde con antialiasing).
-  4. **Espectrograma Cascada 2D (Waterfall)** (Mapa térmico histórico con desplazamiento continuo).
-- **Selector de Dispositivos WASAPI**: Lista desplegable en la UI para conmutar entre auriculares, altavoces o interfaces de audio sin reiniciar la app.
-- **Persistencia Zero-Restart**: Botón en la UI para guardar la configuración calibrada directamente en `config.json`.
-- **Build System con CMake**: Compilación moderna e independiente de IDE con un único `CMakeLists.txt`.
+- Panel Dear ImGui (`Tab` o `H`) para ajustar ganancia, ataque, caída, colores, escalas, bandas y material, y guardar en `config.json`.
+- Diseño Fluent: material acrílico propio detrás del panel; Mica y Acrílico del sistema en Windows 11; transiciones que respetan las preferencias de accesibilidad.
+- Render sincronizado con el refresco del monitor (vsync), con limitador adaptativo si el controlador lo ignora.
 
----
+## Stack y versiones
 
-## Compilar y Ejecutar
+| Pieza | Versión |
+|---|---|
+| Lenguaje | C++17 (MSVC `/W4 /utf-8 /permissive-`) |
+| Build | CMake 3.20+ y solución de Visual Studio (`.sln`, toolset v145) |
+| Gráficos | OpenGL 3.3 Core, GLSL, GLFW 3.4, GLEW 2.1.0 |
+| Interfaz | Dear ImGui 1.91.5 |
+| FFT | FFTW 3.3.5 (`libfftw3f-3`, float) |
+| JSON | nlohmann/json 3.12.0 |
+| Audio | WASAPI (COM), avrt, winmm |
 
-### Opción 1: Con CMake (Recomendada)
-Requisitos: CMake 3.20+ y Visual Studio 2022/2026 con C++ desktop (o Ninja).
+## Requisitos
+
+- Windows 10 u 11, x64. GPU con OpenGL 3.3.
+- Visual Studio con la carga de trabajo «Desarrollo para el escritorio con C++». El `.sln` usa el toolset **v145** (Visual Studio 2026); con Visual Studio 2022 use la ruta de CMake (o cambie el toolset del proyecto a v143).
+- CMake 3.20 o superior (3.21 para usar los presets).
+- Los binarios x64 de GLEW 2.1.0 (siguiente apartado).
+
+## Obtener GLEW x64
+
+El repositorio solo contiene GLEW **Win32** (`glew-2.1.0/lib/Release/Win32`, `glew-2.1.0/bin/Release/Win32`). Hasta la versión 3.0.0 el `.gitignore` tenía la regla `x64/`, que excluía también las carpetas x64 de GLEW; nunca se versionaron, tampoco en el historial. CMake y el `.vcxproj` esperan:
+
+```
+glew-2.1.0/lib/Release/x64/glew32.lib
+glew-2.1.0/bin/Release/x64/glew32.dll
+```
+
+Opción A (recomendada, sin tocar el proyecto): descargar `glew-2.1.0-win32.zip` de la página oficial de versiones de GLEW (<https://github.com/nigels-com/glew/releases/tag/glew-2.1.0>; pese al nombre incluye x64) y copiar `lib/Release/x64/glew32.lib` y `bin/Release/x64/glew32.dll` a las rutas anteriores. La regla del `.gitignore` ya está corregida, de modo que pueden versionarse si se desea.
+
+Opción B (vcpkg): `vcpkg install glew:x64-windows` y copiar `glew32.lib` (de `installed/x64-windows/lib`) y `glew32.dll` (de `installed/x64-windows/bin`) a las mismas rutas. vcpkg instala una versión de GLEW más reciente que 2.1.0, compatible en la API que se usa (carga de OpenGL 3.3).
+
+La migración completa a vcpkg en modo manifiesto está pendiente (ver [Pendientes](#limitaciones-y-pendientes)).
+
+## Compilar y ejecutar
+
+### Con CMake
 
 ```powershell
-# Generar archivos de construcción
 cmake -B build -S . -A x64
-
-# Compilar en modo Release
 cmake --build build --config Release
-
-# Ejecutar
+ctest --test-dir build -C Release
 .\build\Release\audio-visualizer.exe
 ```
 
-El paso post-build de CMake copia automáticamente todas las DLLs (`libfftw3f-3.dll`, `glew32.dll`, `glfw3.dll`), los shaders (`shaders/`) y `config.json` a la carpeta del ejecutable.
+Con los presets incluidos (`CMakePresets.json`, generador por defecto de CMake = Visual Studio más reciente instalado):
 
-### Opción 2: Desde Visual Studio (.sln)
-Abrir `audio-visualizer.sln`, seleccionar la configuración `Release|x64` y pulsar **F5**.
+```powershell
+cmake --preset vs-x64
+cmake --build --preset release
+ctest --preset release
+```
 
----
+El post-build copia `libfftw3f-3.dll`, `glew32.dll`, `glfw3.dll`, `shaders/` y `config.json` junto al ejecutable.
 
-## Documentación Completa (docs/)
+### Con Visual Studio (.sln)
 
-El repositorio cuenta con una suite documental estructurada en la carpeta [`docs/`](docs/):
+Abrir `audio-visualizer.sln`, elegir `Release|x64` y pulsar F5. Las listas de fuentes del `.vcxproj`, del `.filters` y del `CMakeLists.txt` se regeneran a partir de `src/` con `python tools/update_build_lists.py`.
+
+## Uso
+
+Al arrancar captura la salida de audio por defecto. `Tab` o `H` muestra u oculta el panel; las teclas `1` a `6` cambian de modo (tabla de características). La configuración se edita en el panel y se guarda con «Guardar en config.json». Detalles en el [manual de usuario](docs/07_user_manual_and_config.md).
+
+### config.json
+
+Tres secciones: `estilos` (aspecto, dinámica, modo, vsync, material), `bandas` (modo, cortes en Hz, nombres, ataque y caída, ganancia y color por banda) y `analisis` (resolución variable: tamaños de FFT y frecuencias de corte). El archivo de ejemplo es [`config.json`](config.json).
+
+## Documentación
 
 | Documento | Descripción |
 |---|---|
@@ -88,27 +119,14 @@ El repositorio cuenta con una suite documental estructurada en la carpeta [`docs
 | [13. Bitácora de Desarrollo](docs/13_development_log.md) | Cronología por commit, errores clasificados por origen, mediciones antes y después, estado verificado y no verificado, deuda técnica y reproducción de las verificaciones. |
 | [Índice Maestro de Docs](docs/README.md) | Mapa de navegación completo de la documentación técnica. |
 
----
-
-## Controles y Atajos de Teclado
-
-| Tecla | Acción |
-|---|---|
-| `Tab` o `H` | Mostrar / Ocultar el panel de control interactivo de Dear ImGui |
-| `1` | Activar Modo 1: **Barras con Peak-Hold** |
-| `2` | Activar Modo 2: **Radial / Circular** |
-| `3` | Activar Modo 3: **Osciloscopio / Waveform** |
-| `4` | Activar Modo 4: **Espectrograma Cascada (Waterfall)** |
-| `5` | Activar Modo 6: **Osciloscopio Apilado** (una traza por banda reconstruida y la mezcla debajo; la suma de las trazas es la mezcla) |
-| `6` | Activar Modo 5: **Medidores por Banda** (nombre, rango, nivel en dB, pico y color por banda) |
-
----
-
-## Estructura del Repositorio
+## Estructura del proyecto
 
 ```
 audio-visualizer/
 |-- CMakeLists.txt                  Configuración de construcción CMake moderna
+|-- CMakePresets.json              Presets de CMake (vs-x64, release, debug)
+|-- LICENSE                         GNU GPL v3.0
+|-- CHANGELOG.md                    Historial de versiones
 |-- audio-visualizer.sln            Solución de Visual Studio
 |-- config.json                     Configuración inicial en tiempo de ejecución
 |-- docs/                           Documentación formal (PRD, Tech Spec, UX Flows, Kanban)
@@ -183,9 +201,7 @@ audio-visualizer/
 `-- json-develop/                   nlohmann/json 3.12.0 (Serialización JSON)
 ```
 
----
-
-## Arquitectura y Sincronización
+## Arquitectura
 
 Tres hilos concurrentes desacoplados sin contención de bloqueo en el hilo de render:
 
@@ -195,7 +211,7 @@ flowchart LR
     CAP -- Lock & Notify --> RING[(AudioData: Ring Buffer)]
     RING -- Predicate Wait --> FFT[AudioProcessingThread]
     FFT -- Lock & Swap --> SPEC[(VisualizerData: Spectrum + Waveform)]
-    SPEC -- Read if gen++ --> REN[Main Render Thread (144+ FPS)]
+    SPEC -- Read if gen++ --> REN["Main Render Thread (144+ FPS)"]
     REN -- Dear ImGui & Shaders --> DISP[Monitor / Pantalla]
 ```
 
@@ -203,71 +219,28 @@ flowchart LR
 - **Procesado (FFT)**: Toma las 2048 muestras más recientes cada 256 muestras nuevas, aplica ventana de Hann periódica, ejecuta FFTW r2c (1025 bins), interpola bandas en escala lineal/logarítmica y normaliza en dB.
 - **Renderizado (OpenGL 3.3 + ImGui)**: Dibuja las barras o texturas procedurales con shaders GLSL a la frecuencia de actualización del monitor y procesa la interfaz interactiva.
 
----
+## Dependencias de terceros y licencias
 
-## Modos de Visualización
+Todas están versionadas en el repositorio (no se descarga nada al configurar), salvo GLEW x64 (ver arriba).
 
-1. **Barras con Peak-Hold**: Cada barra representa una banda de frecuencia. Un marcador horizontal superior conserva el pico más alto durante el retardo configurado (`peak_hold_time_ms`) y desciende por gravedad (`peak_decay_speed`).
-2. **Radial / Circular**: Proyecta las frecuencias en coordenadas polares en forma de anillo reactivo. Los graves pulsan el núcleo central en sintonía con el bombo.
-3. **Osciloscopio / Waveform**: Dibuja la forma de onda temporal en tiempo real con un haz antialiased que simula el fósforo de un osciloscopio CRT clásico.
-4. **Espectrograma Cascada (Waterfall)**: Mapea la evolución temporal del espectro hacia abajo en una textura 2D mediante una paleta de calor térmico estilo *Inferno*.
-
----
-
-## Configuración (config.json)
-
-Los valores se pueden modificar desde el panel de control Dear ImGui (`H` / `Tab`) y guardarse con el botón **"Guardar en config.json"**:
-
-```json
-{
-  "estilos": {
-    "amplitude_factor": 1.0,
-    "attack_ms": 12.0,
-    "base_color_rgb": [0.65, 0.15, 0.15],
-    "bin_grouping_factor": 10.0,
-    "dynamic_range_db": 60.0,
-    "frequency_scale": "linear",
-    "max_fps": 0,
-    "max_frequency": 16000.0,
-    "min_frequency": 30.0,
-    "peak_color_rgb": [1.0, 0.85, 0.2],
-    "peak_decay_speed": 1.8,
-    "peak_hold_enabled": true,
-    "peak_hold_time_ms": 350.0,
-    "release_ms": 160.0,
-    "selected_device_name": "",
-    "visual_mode": 0,
-    "vsync": true
-  }
-}
-```
-
----
-
-## Versión 3.0: Qué Añade y Cómo Se Verificó
-
-La versión 2.0 reducía el análisis a un vector de alturas de barra. La 3.0 recupera toda la información que la transformada de Fourier extrae del audio y la expone a cualquier renderizador:
-
-- **Descomposición en bandas con reconstrucción exacta.** La pista se separa en las ondas de cada rango de frecuencias y la suma de esas ondas es idéntica a la señal original. Demostrado en el documento 10, diseñado en el 11 y verificado numéricamente con error máximo de 2,6 por 10 elevado a menos 7 (`tests/band_synthesis_test.cpp`).
-- **Límite físico explícito.** No existe "ver cada frecuencia" en tiempo real: resolución en frecuencia y retraso están ligados por el principio de incertidumbre. La interfaz mostrará siempre la latencia asociada a la resolución elegida.
-- **Osciloscopio apilado**, medidores por banda, dinámica de ataque y caída por banda, y detección de golpes por flujo espectral.
-- **Diseño Fluent.** Panel con material acrílico propio (desenfoque, tinte, exclusión, ruido), materiales Mica y Acrílico del sistema en Windows 11, transiciones con curvas de deceleración y respeto a las preferencias de accesibilidad. Documento 12.
-- **Resolución variable opcional.** FFT larga en graves y corta en agudos, con la latencia que añade y ahorra visible en la interfaz. Documento 11, fase D.
-
-La bitácora completa de la implementación, con cada error cometido y corregido, las mediciones y lo que queda sin verificar, está en el [documento 13](docs/13_development_log.md).
-
-Estado: la versión 3.0 está completa. Fases A, B, C y D del documento 11 (trama de análisis con triple búfer; bandas configurables con métricas, dinámica por banda y medidores, tecla `6`; ondas por banda reconstruidas por IFFT enmascarada y osciloscopio apilado, tecla `5`; resolución variable opcional) y diseño Fluent del documento 12 (material acrílico propio, Mica y Acrílico del sistema en Windows 11, transiciones y respeto a las preferencias de accesibilidad). Cuatro pruebas numéricas ejecutables con `ctest`. El orden de ejecución y los criterios de aceptación están en el documento 04, épicas 5 a 7.
-
----
-
-## Dependencias de Terceros
-
-Todas las bibliotecas están versionadas dentro del repositorio. No se descarga nada al configurar ni al compilar:
-
-| Biblioteca | Versión | Tipo | Función |
+| Biblioteca | Versión | Forma | Licencia |
 |---|---|---|---|
-| **FFTW** | 3.3.5 | Binarios versionados | Transformada rápida de Fourier r2c en precisión simple |
-| **GLFW** | 3.4 | Binarios versionados | Ventana, contexto OpenGL, temporizador y eventos |
-| **GLEW** | 2.1.0 | Binarios versionados | Carga de extensiones OpenGL 3.3 Core Profile |
-| **Dear ImGui** | 1.91.5 | Fuentes versionadas (`imgui-1.91.5/`) | Panel de control interactivo en tiempo real |
-| **nlohmann/json** | 3.12.0 | Header-only versionado | Lectura y escritura de `config.json` |
+| FFTW | 3.3.5 | DLL x64 (`fftw-3.3.5-dll64/`) | GPL-2.0 o posterior (`COPYING`) |
+| GLFW | 3.4 | Binarios WIN64 (`glfw-3.4.bin.WIN64/`) | zlib/libpng (`LICENSE.md`) |
+| GLEW | 2.1.0 | Binarios y cabeceras (`glew-2.1.0/`) | BSD modificada + MIT (Mesa) + Khronos (`LICENSE.txt`) |
+| Dear ImGui | 1.91.5 | Fuentes (`imgui-1.91.5/`) | MIT (`LICENSE.txt`) |
+| nlohmann/json | 3.12.0 | Cabeceras (`json-develop/`) | MIT (`LICENSE.MIT`) |
+
+FFTW es GPL; por eso el proyecto se distribuye bajo GPL-3.0 (compatible con la cláusula «o posterior» de FFTW).
+
+## Limitaciones y pendientes
+
+- **Modernización del build pendiente**: dependencias por **vcpkg** en modo manifiesto (`vcpkg.json` + `find_package`), sustituir GLEW por **glad** (sin DLL) y **CI en GitHub Actions** (`windows-latest`: configurar, compilar y `ctest`). Hasta entonces, GLEW x64 se obtiene a mano.
+- Dependencias antiguas: GLEW 2.1.0 (2017) y FFTW 3.3.5 (2016; la vigente es 3.3.10).
+- Los binarios vendorizados incluyen variantes que no se usan (GLFW para otros compiladores, FFTW double y long double, GLEW Win32, utilidades); el `.vcxproj` enlaza además `libfftw3-3.lib` sin necesitarlo.
+- Dos sistemas de build en paralelo (CMake y `.sln`), sincronizados por `tools/update_build_lists.py`.
+- Solo Windows x64. Pendientes funcionales (DPI por monitor, otros desenfoques, etc.) en el [documento 13](docs/13_development_log.md), §6.
+
+## Autor y licencia
+
+Marlon Torres Espinoza. Distribuido bajo la licencia **GNU GPL v3.0**; ver [LICENSE](LICENSE). Las bibliotecas de terceros conservan sus licencias (tabla anterior).
