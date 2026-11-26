@@ -1,0 +1,21 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "vs-x64",
+      "displayName": "Visual Studio x64",
+      "description": "Generador por defecto de CMake (la versión de Visual Studio más reciente instalada), x64, en build/",
+      "architecture": { "value": "x64", "strategy": "set" },
+      "binaryDir": "${sourceDir}/build",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "release", "configurePreset": "vs-x64", "configuration": "Release" },
+    { "name": "debug", "configurePreset": "vs-x64", "configuration": "Debug" }
+  ],
+  "testPresets": [
+    { "name": "release", "configurePreset": "vs-x64", "configuration": "Release", "output": { "outputOnFailure": true } }
+  ]
+}
