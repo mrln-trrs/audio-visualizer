@@ -1,6 +1,7 @@
 # Archivos y carpetas generados por Visual Studio y el sistema
 .vs/
-x64/
+# Solo la salida de VS en la raíz: «x64/» a secas excluía también glew-2.1.0/{lib,bin}/Release/x64
+/x64/
 *.vcxproj.user
 *.vcxproj.filters
 
@@ -14,4 +15,6 @@ CppProperties.json
 CMakeSettings.json
 
 # Salida de construcción de CMake
-build*/
+/build*/
+/out/
+CMakeUserPresets.json
